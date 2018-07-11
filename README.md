@@ -74,3 +74,6 @@ The scripts in the ``experiments/`` folder reproduce the results of the experime
 * Run the script ``experiments/multi_modal_retrieval.py``  for multi-modal retrieval experiment on Wikipedia dataset.
 * Run the script ``experiments/voc_2007_classification.py`` for image classification experiment on PASCAL VOC 2007.
 # TextTopicNet_pytorch
+# TextTopicNet_pytorch
+# TextTopicNet_pytorch
+# TextTopicNet_pytorch
