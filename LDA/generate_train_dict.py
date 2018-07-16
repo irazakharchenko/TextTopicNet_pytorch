@@ -8,7 +8,7 @@ print '  Traverses the dataset images directory'
 print '  builds a dictionary with images paths as keys and text articles paths as values'
 print '  (...)'
 
-db_dir  = '../data/ImageCLEF_Wikipedia/'
+db_dir  = '/mnt/lascar/qqiscen/src/TextTopicNet/data/ImageCLEF_Wikipedia/'
 
 img_dir = db_dir+'images/'
 xml_dir = db_dir+'metadata/'
@@ -26,10 +26,13 @@ if not os.path.isdir(xml_dir):
 
 def get_article(xml_file, lang='en'):
     tree = ET.parse(xml_file)
-    root = tree.getroot()                                                          
+    root = tree.getroot()  
+    print(root)                                                        
     for child in root: 
+        print(child.attrib)
         if child.attrib == {'{http://www.w3.org/XML/1998/namespace}lang': lang}:
             for child2 in child:
+                print(child2.tag)
                 if child2.tag == 'caption':
                     return child2.attrib
     return ''
@@ -46,9 +49,12 @@ for root, dirs, files in os.walk(img_dir):
         if ext[1] == 'jpg' or ext[1] == 'jpeg': # discard ~30k png files (usually diagrams, drawings, etc...)
             if not os.path.isfile(xml_dir+os.path.basename(root)+'/'+ext[0]+'.xml'):
                 continue
-            article = get_article(xml_dir+os.path.basename(root)+'/'+ext[0]+'.xml','en')
+            article = get_article(xml_dir+os.path.basename(root)+'/'+ext[0]+'.xml')
+            # print(xml_dir+os.path.basename(root)+'/'+ext[0]+'.xml')
             if article == {}: # discard images from non english articles
                 continue
+            # print("len ",len(article))
+            
             if article['article'] == '': # discard images from non english articles
                 continue
             im = Image.open(root+'/'+file)
@@ -58,6 +64,7 @@ for root, dirs, files in os.walk(img_dir):
 
             img_path = path[len(path)-2]+'/'+path[len(path)-1]+'/'+file
             train_dict[img_path] = article['article']
+
 
 with open('train_dict_ImageCLEF_Wikipedia.json', 'w') as fp:
     json.dump(train_dict, fp)

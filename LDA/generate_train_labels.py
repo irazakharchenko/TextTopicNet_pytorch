@@ -4,12 +4,16 @@ import json
 from nltk.tokenize import RegexpTokenizer
 from stop_words import get_stop_words
 from nltk.stem.porter import PorterStemmer
+from nltk.data import path as nltk_path
+
+from numpy import float64
 
 import gensim
 from gensim import utils, corpora, models
 from gensim.corpora.wikicorpus import remove_markup
 from preprocess_text import preprocess
 
+nltk_path.append('./nltk_data/')
 print '  '+sys.argv[0]
 print '  builds a dictionary with images paths as keys and LDA space probability distributions as values'
 print '  these probability distributions are then used as labels'
@@ -17,7 +21,7 @@ print '  for training a CNN to predict the semantic context in which images appe
 print '  (...)'
 
 NUM_TOPICS = 40
-db_dir  = '../data/ImageCLEF_Wikipedia/'
+db_dir  = '/mnt/lascar/qqiscen/src/TextTopicNet/data/VOC2007/VOCdevkit/VOC2007/'
 train_dict_path = 'train_dict_ImageCLEF_Wikipedia.json'
 
 if not os.path.isdir(db_dir):
@@ -75,7 +79,7 @@ for img_path in train_dict.keys():
     labels = []
     for topic_num in range(0,NUM_TOPICS):
         if topic_num in topic_prob.keys():
-          labels.append(topic_prob[topic_num])
+          labels.append(float64(topic_prob[topic_num]))
         else:
           labels.append(0)
     target_labels[img_path] = labels
@@ -83,6 +87,14 @@ for img_path in train_dict.keys():
     sys.stdout.flush()
 sys.stdout.write(' Done!\n')
 
-# save key,labels pairs into json format file
-with open('./training_labels'+str(NUM_TOPICS)+'.json','w') as fp:
-  json.dump(target_labels, fp)
+
+# save key,labels pairs into txt format file
+with open('./training_labels'+str(NUM_TOPICS) + '_voc.txt','w') as fp:
+  
+  for key in target_labels.keys():
+    s = key + "\t"
+    for el in target_labels[key]:
+        s += str(el) + ","
+    s = s[:-1]
+    s += "\n"
+    fp.write(s)

@@ -7,7 +7,7 @@ layer {
   python_param {
     module: "layers"
     layer: "MultiLabelDataLayerWikiCLEF"
-    param_str: "{\'num_topics\': 40, \'batch_size\': 64, \'img_dir\': \'../../data/ImageCLEF_Wikipedia/\', \'mean\': (104.00699, 116.66877, 122.67892)}"
+    param_str: "{\'num_topics\': 40, \'batch_size\': 64, \'img_dir\': \'/mnt/lascar/qqiscen/src/TextTopicNet/data/ImageCLEF_Wikipedia/\', \'mean\': (104.00699, 116.66877, 122.67892)}"
   }
   include { phase:TRAIN }
 }

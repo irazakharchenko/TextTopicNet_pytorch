@@ -4,6 +4,7 @@ import json
 from nltk.tokenize import RegexpTokenizer
 from stop_words import get_stop_words
 from nltk.stem.porter import PorterStemmer
+from nltk.data import path as nltk_path
 
 import gensim
 from gensim import utils, corpora, models
@@ -12,10 +13,11 @@ from gensim.corpora.wikicorpus import remove_markup
 from preprocess_text import preprocess
 import logging
 
+nltk_path.append('./nltk_data/')
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 NUM_TOPICS = 40
-db_dir  = '../data/ImageCLEF_Wikipedia/'
+db_dir  = '/mnt/lascar/qqiscen/src/TextTopicNet/data/ImageCLEF_Wikipedia/'
 train_dict_path = 'train_dict_ImageCLEF_Wikipedia.json'
 
 print '  '+sys.argv[0]
