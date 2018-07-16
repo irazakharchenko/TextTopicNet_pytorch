@@ -13,7 +13,10 @@ from gensim.corpora.wikicorpus import remove_markup
 from preprocess_text import preprocess
 import logging
 
+<<<<<<< HEAD
 nltk_path.append('./nltk_data/')
+=======
+>>>>>>> 9e3796c2e3ccbf461ae625632f3385998c6196e0
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 NUM_TOPICS = 40
