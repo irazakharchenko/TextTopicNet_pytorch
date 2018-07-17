@@ -41,8 +41,7 @@ class ImageDataset(Dataset):
                 #     copyfile(root_dir + key, "/home.guest/zakhairy/code/our_TextTopicNet/data/some_ph/" + key.split("/")[-1])
                 #     len -= 1
                 li = inp.readline()
-        #print(self.landmarks_frame[20])
-        
+                
         self.root_dir = root_dir
         self.transform = transform
 

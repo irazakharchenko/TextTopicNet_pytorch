@@ -209,25 +209,15 @@ def train(train_loader, model, criterion, optimizer, epoch):
     for i, (input, target) in enumerate(train_loader):
         # measure data loading time
         data_time.update(time.time() - end)
-        # if( target == "landmarks"):
-        #     j += 1
-        #     sys.stdout.write('\r%d/%d images skipped...' % (j,i+1))
-        #     sys.stdout.flush()
-        #     continue
-        # sys.stdout.write('\r%d/%d images processed...' % (i,len(train_loader)))
-        # sys.stdout.flush()
-
-        
-        input, target_i = Variable(input), Variable(target[i])
-        print(target_i.size(), " other[:][1] ", target[:][1].size(), " target ", target.size())
-        target_i = target_i.cuda(non_blocking=True)
+       
+        input, target = Variable(input), Variable(target)
+        # print(target_i.size(), " other[:][1] ", target[:][1].size(), " target ", target.size())
+        target = target.cuda(non_blocking=True)
 
         # compute output
-	   
         output = model(input)   
 	   
-        # print "\n output " + str(output.size()) + " target " + str(target.size())
-        loss = criterion(output, target_i.float())
+        loss = criterion(output, target.float())
 
         # measure accuracy and record loss
         # prec1, prec5 = accuracy(output, target, topk=(1, 5))
