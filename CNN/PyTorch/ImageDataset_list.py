@@ -29,7 +29,7 @@ class ImageDataset(Dataset):
         """
         self.topics = []
         self.images = []
-        len = 20
+        
         with open(file, "r") as inp:
             li = inp.readline()
             while li :
@@ -37,9 +37,9 @@ class ImageDataset(Dataset):
                 
                 self.images.append(key)
                 self.topics.append(literal_eval("[" + val + "]"))
-                if  len > 0 and randint(0,2) == 1:
-                    copyfile(root_dir + key, "/home.guest/zakhairy/code/our_TextTopicNet/data/some_ph/" + key.split("/")[-1])
-                    len -= 1
+                # if  len > 0 and randint(0,2) == 1:
+                #     copyfile(root_dir + key, "/home.guest/zakhairy/code/our_TextTopicNet/data/some_ph/" + key.split("/")[-1])
+                #     len -= 1
                 li = inp.readline()
         #print(self.landmarks_frame[20])
         

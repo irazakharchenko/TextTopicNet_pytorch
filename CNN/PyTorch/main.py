@@ -97,6 +97,7 @@ def main():
 
     # define loss function (criterion) and optimizer
     criterion = nn.MultiLabelSoftMarginLoss().cuda()
+    # criterion =  nn.MultiLabelSoftMarginCriterion().cuda()
 
     optimizer = torch.optim.SGD(model.parameters(), args.lr,
                                 momentum=args.momentum,
@@ -123,7 +124,7 @@ def main():
   
     # file training_labels
     
-    valdir = os.path.join("/mnt/lascar/qqiscen/src/TextTopicNet/data/VOC2007/")
+    valdir = os.path.join("/mnt/lascar/qqiscen/src/TextTopicNet/data/VOC2007/VOCdevkit/VOC2007/")
     normalize = transforms.Normalize(mean=[104.00698793, 116.66876762, 122.67891434],
                                      std=[1, 1, 1])
     # 
@@ -148,13 +149,13 @@ def main():
         num_workers=args.workers, pin_memory=True, sampler=train_sampler)
 
     print 'load validation dataset'
+    val_dataset =ImageDataset( "/home.guest/zakhairy/code/our_TextTopicNet/LDA/training_labels20.txt", valdir, 
+            transforms.Compose([
+            Rescale(256),
+            RandomCrop(224),
+        ]))
     val_loader = torch.utils.data.DataLoader(
-        datasets.ImageFolder(valdir, transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),
-            normalize,
-        ])),
+        val_dataset,
         batch_size=args.batch_size, shuffle=False,
         num_workers=args.workers, pin_memory=True)
 
@@ -163,7 +164,7 @@ def main():
         return
 
     for epoch in range(args.start_epoch, args.epochs):
-        print str(epoch) + ' epoch'
+       
         if args.distributed:
             train_sampler.set_epoch(epoch)
         adjust_learning_rate(optimizer, epoch)
@@ -173,19 +174,19 @@ def main():
 
         # evaluate on validation set
 
-        # prec1 = validate(val_loader, model, criterion)
+        prec1 = validate(val_loader, model, criterion)
 
         # remember best prec@1 and save checkpoint
 
-        # is_best = prec1 > best_prec1
-        # best_prec1 = max(prec1, best_prec1)
-        # save_checkpoint({
-        #     'epoch': epoch + 1,
-        #     'arch': args.arch,
-        #     'state_dict': model.state_dict(),
-        #     'best_prec1': best_prec1,
-        #     'optimizer' : optimizer.state_dict(),
-        # }, is_best)
+        is_best = prec1 > best_prec1
+        best_prec1 = max(prec1, best_prec1)
+        save_checkpoint({
+            'epoch': epoch + 1,
+            'arch': args.arch,
+            'state_dict': model.state_dict(),
+            'best_prec1': best_prec1,
+            'optimizer' : optimizer.state_dict(),
+        }, is_best)
         
 
 
@@ -217,21 +218,22 @@ def train(train_loader, model, criterion, optimizer, epoch):
         # sys.stdout.flush()
 
         
-        input, target = Variable(input), Variable(target)
-        target = target.cuda(non_blocking=True)
+        input, target_i = Variable(input), Variable(target[i])
+        print(target_i.size(), " other[:][1] ", target[:][1].size(), " target ", target.size())
+        target_i = target_i.cuda(non_blocking=True)
 
         # compute output
 	   
         output = model(input)   
 	   
         # print "\n output " + str(output.size()) + " target " + str(target.size())
-        loss = criterion(output, target.float())
+        loss = criterion(output, target_i.float())
 
         # measure accuracy and record loss
         # prec1, prec5 = accuracy(output, target, topk=(1, 5))
         losses.update(loss.item(), input.size(0))
-        prec = accuracy_simple(output, target)
-
+        # prec = accuracy_simple(output, target)
+       
         # compute gradient and do SGD step
         optimizer.zero_grad()
         loss.backward()
@@ -246,9 +248,9 @@ def train(train_loader, model, criterion, optimizer, epoch):
                   'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                   'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
                   'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-                  'Prec {prec.val:.4f} ({prec.avg:.4f})'.format(
+                   .format(
                    epoch, i, len(train_loader), batch_time=batch_time,
-                   data_time=data_time, loss=losses, prec=prec))
+                   data_time=data_time, loss=losses))
 
 
 def validate(val_loader, model, criterion):
@@ -330,12 +332,17 @@ def adjust_learning_rate(optimizer, epoch):
 
 def accuracy_simple(output, target):
     with torch.no_grad():
-        maxk = max(topk)
+        
         batch_size = target.size(0)
+        _, predicted = torch.max(output, 0)
+        # res = (torch.abs(predicted.t() - target.view(1, -1).expand_as(pred)) < 0.0005).sum()
+        print("predicted {}, target {}".format(predicted.size(), target.size()))
+        res = (predicted == target.expand_as(predicted).float()).sum(0, keepdim=True)
+        return res
+        #  _, predicted = torch.max(outputs.data, 1)
+        # total += labels.size(0)
+        # correct += (predicted == labels).sum().item()
 
-        _, pred = output.topk(maxk, 1, True, True)
-        res = torch.abs(torch.add(output, -target))
-        print(pred)
         
 
 def accuracy(output, target, topk=(1,)):
