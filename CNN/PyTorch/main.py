@@ -173,12 +173,7 @@ def main():
         train(train_loader, model, criterion, optimizer, epoch)
 
         # evaluate on validation set
-
-        num_ftrs = model.fc.in_features
-        model_ft.fc = nn.Linear(num_ftrs, 2)
-
-        model_ft = model_ft.to(device)
-
+        
         
     torch.save(model, ".")
 
