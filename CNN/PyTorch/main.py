@@ -174,21 +174,13 @@ def main():
 
         # evaluate on validation set
 
-        prec1 = validate(val_loader, model, criterion)
+        num_ftrs = model.fc.in_features
+        model_ft.fc = nn.Linear(num_ftrs, 2)
 
-        # remember best prec@1 and save checkpoint
+        model_ft = model_ft.to(device)
 
-        is_best = prec1 > best_prec1
-        best_prec1 = max(prec1, best_prec1)
-        save_checkpoint({
-            'epoch': epoch + 1,
-            'arch': args.arch,
-            'state_dict': model.state_dict(),
-            'best_prec1': best_prec1,
-            'optimizer' : optimizer.state_dict(),
-        }, is_best)
         
-
+    torch.save(model, ".")
 
 def train(train_loader, model, criterion, optimizer, epoch):
     batch_time = AverageMeter()
@@ -318,38 +310,6 @@ def adjust_learning_rate(optimizer, epoch):
     lr = args.lr * (0.1 ** (epoch // 50000))
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
-
-
-def accuracy_simple(output, target):
-    with torch.no_grad():
-        
-        batch_size = target.size(0)
-        _, predicted = torch.max(output, 0)
-        # res = (torch.abs(predicted.t() - target.view(1, -1).expand_as(pred)) < 0.0005).sum()
-        print("predicted {}, target {}".format(predicted.size(), target.size()))
-        res = (predicted == target.expand_as(predicted).float()).sum(0, keepdim=True)
-        return res
-        #  _, predicted = torch.max(outputs.data, 1)
-        # total += labels.size(0)
-        # correct += (predicted == labels).sum().item()
-
-        
-
-def accuracy(output, target, topk=(1,)):
-    """Computes the precision@k for the specified values of k"""
-    with torch.no_grad():
-        maxk = max(topk)
-        batch_size = target.size(0)
-
-        _, pred = output.topk(maxk, 1, True, True)
-        pred = pred.t()
-        correct = pred.eq(target.view(1, -1).expand_as(pred))
-
-        res = []
-        for k in topk:
-            correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
-            res.append(correct_k.mul_(100.0 / batch_size))
-        return res
 
 
 if __name__ == '__main__':

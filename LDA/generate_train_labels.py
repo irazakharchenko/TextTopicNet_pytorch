@@ -20,9 +20,9 @@ print '  these probability distributions are then used as labels'
 print '  for training a CNN to predict the semantic context in which images appear'
 print '  (...)'
 
-NUM_TOPICS = 40
+NUM_TOPICS = 20
 db_dir  = '/mnt/lascar/qqiscen/src/TextTopicNet/data/VOC2007/VOCdevkit/VOC2007/'
-train_dict_path = 'train_dict_ImageCLEF_Wikipedia.json'
+train_dict_path = 'train_dict_VOC.json'
 
 if not os.path.isdir(db_dir):
     sys.exit('ERR: Dataset folder '+db_dir+' not found!')
@@ -66,7 +66,7 @@ print ' Done!'
 target_labels = {}
 for img_path in train_dict.keys():
 
-    with open(db_dir+train_dict[img_path]) as fp: raw = fp.read()
+    with open(db_dir+img_path) as fp: raw = fp.read()
 
     tokens = preprocess(raw)
     bow_vector = dictionary.doc2bow(tokens)
@@ -89,7 +89,7 @@ sys.stdout.write(' Done!\n')
 
 
 # save key,labels pairs into txt format file
-with open('./training_labels'+str(NUM_TOPICS) + '_voc.txt','w') as fp:
+with open('./training_labels'+str(NUM_TOPICS) + '.txt','w') as fp:
   
   for key in target_labels.keys():
     s = key + "\t"

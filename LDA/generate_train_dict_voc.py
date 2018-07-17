@@ -48,11 +48,11 @@ for root, dirs, files in os.walk(img_dir):
                 continue
             article = get_article(xml_dir+os.path.basename(root)+'/'+ext[0]+'.xml')
             # print(xml_dir+os.path.basename(root)+'/'+ext[0]+'.xml')
-            if article == {}: # discard images from non english articles
+            if article == {}:   
                 continue
             # print("len ",len(article))
             
-            if article['article'] == '': # discard images from non english articles
+            if article['article'] == '': 
                 continue
             im = Image.open(root+'/'+file)
             width, height = im.size
