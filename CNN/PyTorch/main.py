@@ -175,7 +175,7 @@ def main():
         # evaluate on validation set
         
         
-    torch.save(model, ".")
+    torch.save(model, "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model")
 
 def train(train_loader, model, criterion, optimizer, epoch):
     batch_time = AverageMeter()
@@ -249,8 +249,7 @@ def validate(val_loader, model, criterion):
             # compute output
             output = model(input)
             
-            print("\nOutside: input size", input.size(),"output_size", output.size(), "target_size", target.size())
-            print(target[:10])
+           
             loss = criterion(output, target.float())
 
             # measure accuracy and record loss
