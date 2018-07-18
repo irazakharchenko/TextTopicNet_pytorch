@@ -18,6 +18,7 @@ import torchvision.models as models
 from torch.autograd import Variable
 
 from ImageDataset_list import *
+import AlexNet_pool_norm
 
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   
 os.environ["CUDA_VISIBLE_DEVICES"]="5"
@@ -83,10 +84,14 @@ def main():
         model = models.__dict__[args.arch](pretrained=True)
     else:
         print("=> creating model '{}'".format(args.arch))
-        model = models.__dict__[args.arch](num_classes=40)
+        if args.arch.startswith('alexnet'):
+            model = AlexNet_pool_norm.alexnet_pool_norm(num_classes=40)
+        else:
+            model = models.__dict__[args.arch](num_classes=40)
 
     if not args.distributed:
         if args.arch.startswith('alexnet') or args.arch.startswith('vgg'):
+             
             model.features = torch.nn.DataParallel(model.features)
             model.cuda()
         else:
