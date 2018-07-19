@@ -102,8 +102,7 @@ def main():
 
     # define loss function (criterion) and optimizer
     criterion = nn.MultiLabelSoftMarginLoss().cuda()
-    # criterion =  nn.MultiLabelSoftMarginCriterion().cuda()
-
+    
     optimizer = torch.optim.SGD(model.parameters(), args.lr,
                                 momentum=args.momentum,
                                 weight_decay=args.weight_decay)
@@ -124,24 +123,16 @@ def main():
 
     cudnn.benchmark = True
 
-    # Data loading code
-
-  
-    # file training_labels
     
-    valdir = os.path.join("/mnt/lascar/qqiscen/src/TextTopicNet/data/VOC2007/VOCdevkit/VOC2007/")
-    normalize = transforms.Normalize(mean=[104.00698793, 116.66876762, 122.67891434],
-                                     std=[1, 1, 1])
-    # 
-    print 'load train dataset'
+    print 'Load train dataset'
 
     ### need to add normalize
     train_dataset = ImageDataset(
         "/home.guest/zakhairy/code/our_TextTopicNet/LDA/training_labels40.txt", args.data,
         transforms.Compose([
             Rescale(256),
-            RandomCrop(224),
-                            
+            RandomCrop(227),
+            Normalize([104.00698793, 116.66876762, 122.67891434]),  
         ]))
 
     if args.distributed:
@@ -153,20 +144,6 @@ def main():
         train_dataset, batch_size=args.batch_size, shuffle=(train_sampler is None),
         num_workers=args.workers, pin_memory=True, sampler=train_sampler)
 
-    print 'load validation dataset'
-    val_dataset =ImageDataset( "/home.guest/zakhairy/code/our_TextTopicNet/LDA/training_labels20.txt", valdir, 
-            transforms.Compose([
-            Rescale(256),
-            RandomCrop(224),
-        ]))
-    val_loader = torch.utils.data.DataLoader(
-        val_dataset,
-        batch_size=args.batch_size, shuffle=False,
-        num_workers=args.workers, pin_memory=True)
-
-    if args.evaluate:
-        validate(val_loader, model, criterion)
-        return
 
     for epoch in range(args.start_epoch, args.epochs):
        
@@ -176,8 +153,6 @@ def main():
 
         # train for one epoch
         train(train_loader, model, criterion, optimizer, epoch)
-
-        # evaluate on validation set
         
         
     torch.save(model, "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model")
@@ -186,9 +161,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
     batch_time = AverageMeter()
     data_time = AverageMeter()
     losses = AverageMeter()
-    top1 = AverageMeter()
-    top5 = AverageMeter()
-	
+    
     # switch to train mode
     
     model.train()
@@ -203,7 +176,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
         data_time.update(time.time() - end)
        
         input, target = Variable(input), Variable(target)
-        # print(target_i.size(), " other[:][1] ", target[:][1].size(), " target ", target.size())
+       
         target = target.cuda(non_blocking=True)
 
         # compute output
@@ -211,11 +184,10 @@ def train(train_loader, model, criterion, optimizer, epoch):
 	   
         loss = criterion(output, target.float())
 
-        # measure accuracy and record loss
-        # prec1, prec5 = accuracy(output, target, topk=(1, 5))
+        # measure record loss
+
         losses.update(loss.item(), input.size(0))
-        # prec = accuracy_simple(output, target)
-       
+        
         # compute gradient and do SGD step
         optimizer.zero_grad()
         loss.backward()
@@ -233,51 +205,6 @@ def train(train_loader, model, criterion, optimizer, epoch):
                    .format(
                    epoch, i, len(train_loader), batch_time=batch_time,
                    data_time=data_time, loss=losses))
-
-
-def validate(val_loader, model, criterion):
-    batch_time = AverageMeter()
-    losses = AverageMeter()
-    top1 = AverageMeter()
-    top5 = AverageMeter()
-
-    # switch to evaluate mode
-    model.eval()
-
-    with torch.no_grad():
-        end = time.time()
-        for i, (input, target) in enumerate(val_loader):
-            input, target = Variable(input), Variable(target)
-        
-            target = target.cuda(non_blocking=True)
-
-            # compute output
-            output = model(input)
-            
-           
-            loss = criterion(output, target.float())
-
-            # measure accuracy and record loss
-            # prec1, prec5 = accuracy(output, target, topk=(1, 5))
-            losses.update(loss.item(), input.size(0))
-            # top1.update(prec1[0], input.size(0))
-            # top5.update(prec5[0], input.size(0))
-
-            # measure elapsed time
-            batch_time.update(time.time() - end)
-            end = time.time()
-
-            if i % args.print_freq == 0:
-                print('Test: [{0}/{1}]\t'
-                      'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                      'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-                      ''.format(
-                       i, len(val_loader), batch_time=batch_time, loss=losses,
-                      ))
-
-        
-
-    return losses / input.size(0)
 
 
 def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):

@@ -64,7 +64,7 @@ class ImageDataset(Dataset):
             image, topics = self.transform([image,  topics])
         
         image = image.transpose((2, 0, 1))
-        image = torch.from_numpy(image).float()
+        image = torch.from_numpy(np.flip(image,axis=0).copy()   ).float()
         topics = torch.from_numpy(np.asarray(topics)).long()
         
         return [image,  topics]
@@ -134,33 +134,16 @@ class RandomCrop(object):
         return [ image,  landmarks]
 
 
-class ToTensor(object):
-    """Convert ndarrays in sample to Tensors."""
-
-    def __call__(self, sample):
-        image, landmarks = sample
-
-        # swap color axis because
-        # numpy image: H x W x C
-        # torch image: C X H X W
-        if ( len(image.shape) < 3 ):
-            image = to_rgb2(image)
-        
-        image = image.transpose((2, 0, 1))
-        print( "image shape ", image.shape)
-        return [ torch.from_numpy(image).float(),
-                 torch.from_numpy(landmarks).long()]
-
-
 class Normalize(object):
     "Normalize image"
-    def __init__(self, mean, std):
+    def __init__(self, mean):
         self.mean = torch.FloatTensor(mean)
-        self.std = torch.FloatTensor(std)
+      
 
     def __call__(self, sample):
         image, landmarks = sample
-        image = np.divide(np.subtract(image, self.mean.expand_as(image)) , self.std.expand_as(image))
+        image = image[:,:,::-1] # switch channels RGB -> BGR
+        image -= self.mean
         return [image, landmarks]
 
 
