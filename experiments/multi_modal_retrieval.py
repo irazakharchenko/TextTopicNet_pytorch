@@ -92,16 +92,17 @@ IMG_SIZE = 256
 MODEL_INPUT_SIZE = 227
 MEAN = np.array([104.00698793, 116.66876762, 122.67891434])
 
-text_dir_wd = '../data/Wikipedia/texts_wd/' # Path to wikipedia dataset text files
-img_root = '..' # Path to wikipedia dataset image files
+text_dir_wd = '../data/Wikipedia/wikipedia_dataset/texts/' # Path to wikipedia dataset text files
+img_root = "/home.guest/zakhairy/code/our_TextTopicNet/data/Wikipedia/wikipedia_dataset/images/" # Path to wikipedia dataset image files
 image_categories = ['art', 'geography', 'literature', 'music', 'sport', 'biology', 'history', 'media', 'royalty', 'warfare'] # List of document (image-text) categories in wikipedia dataset
 
 # Generate representation for each image in wikipedia dataset
 for type_data in type_data_list:
 	# Specify path to wikipedia dataset image folder and output folder to store features
 	out_root = '/home.guest/zakhairy/code/our_TextTopicNet/generated_data/multi_modal_retrieval/image/' + str(layer) + '/' + str(num_topics) + '/' + str(type_data) + '/'
-	if not os.path.exists(out_root):
+	if not os.path.exists(out_root):	
 		os.makedirs(out_root)
+	print(str(type_data)+'set_txt_img_cat.list')
 	im_txt_pair_wd = open('/mnt/lascar/qqiscen/src/TextTopicNet/data/Wikipedia/'+str(type_data)+'set_txt_img_cat.list', 'r').readlines() # Image-text pairs
 	img_files = [i.split('\t')[1] + '.jpg' for i in im_txt_pair_wd] # List of image files in wikipedia dataset
 	for sample in img_files:
