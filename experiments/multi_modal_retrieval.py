@@ -4,7 +4,7 @@ import sys,os
 import random
 import json
 import numpy as np
-import caffe
+
 from termcolor import colored
 from PIL import Image
 import gensim
@@ -15,6 +15,16 @@ from sklearn.metrics import average_precision_score
 from sklearn import preprocessing
 import scipy.stats as sp
 from preprocess_text import preprocess_imageclef
+
+import torch
+
+from torch.autograd import Variable
+sys.path.insert(0, '/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch')
+
+import AlexNet_pool_norm
+
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   
+os.environ["CUDA_VISIBLE_DEVICES"]="1"
 
 num_topics = 40
 layer = 'prob'
@@ -68,33 +78,31 @@ query_type=sys.argv[1]
 
 layer = 'prob' # Note : Since image and text has to be in same space for retieval. CNN layer has to be 'prob'
 num_topics = 40 # Number of topics for the corresponding LDA model
-caffe.set_mode_gpu()
+
 
 # Specify path to model prototxt and model weights
-model_def = '../CNN/CaffeNet/deploy.prototxt'
-model_weights = '../CNN/CaffeNet/TextTopicNet_Wikipedia_ImageCLEF_40Topics.caffemodel'
-print colored('Model weights are loaded from : ' + model_weights, 'green')
+PATH = "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model"
+print colored('Model weights are loaded from : ' + PATH	, 'green')
 
-# Initialize caffe model instnce with given weights and model prototxt
-net = caffe.Net(model_def,      # defines the structure of the model\n",
-                model_weights,  # contains the trained weights\n",
-                caffe.TEST)     # use test mode (e.g., don't perform dropout)"
+
+# Initialize pytorch model instnce with given weights and model prototxt
+net = torch.load(PATH)
 
 IMG_SIZE = 256
 MODEL_INPUT_SIZE = 227
 MEAN = np.array([104.00698793, 116.66876762, 122.67891434])
 
 text_dir_wd = '../data/Wikipedia/texts_wd/' # Path to wikipedia dataset text files
-img_root = '../data/Wikipedia/images_wd_256/' # Path to wikipedia dataset image files
+img_root = '..' # Path to wikipedia dataset image files
 image_categories = ['art', 'geography', 'literature', 'music', 'sport', 'biology', 'history', 'media', 'royalty', 'warfare'] # List of document (image-text) categories in wikipedia dataset
 
 # Generate representation for each image in wikipedia dataset
 for type_data in type_data_list:
 	# Specify path to wikipedia dataset image folder and output folder to store features
-	out_root = './generated_data/multi_modal_retrieval/image/' + str(layer) + '/' + str(num_topics) + '/' + str(type_data) + '/'
+	out_root = '/home.guest/zakhairy/code/our_TextTopicNet/generated_data/multi_modal_retrieval/image/' + str(layer) + '/' + str(num_topics) + '/' + str(type_data) + '/'
 	if not os.path.exists(out_root):
 		os.makedirs(out_root)
-	im_txt_pair_wd = open('../data/Wikipedia/'+str(type_data)+'set_txt_img_cat.list', 'r').readlines() # Image-text pairs
+	im_txt_pair_wd = open('/mnt/lascar/qqiscen/src/TextTopicNet/data/Wikipedia/'+str(type_data)+'set_txt_img_cat.list', 'r').readlines() # Image-text pairs
 	img_files = [i.split('\t')[1] + '.jpg' for i in im_txt_pair_wd] # List of image files in wikipedia dataset
 	for sample in img_files:
         	im_filename = img_root+sample

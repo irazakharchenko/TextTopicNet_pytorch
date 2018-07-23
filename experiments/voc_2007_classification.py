@@ -19,6 +19,9 @@ import torch.distributed as dist
 import torch.optim
 
 from torch.autograd import Variable
+sys.path.insert(0, '/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch')
+
+import AlexNet_pool_norm
 
 
 def get_vector(target_layer, t_img):
@@ -64,22 +67,18 @@ out_root = '/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/SVMs/VOC2007/
 if not os.path.exists(out_root):
   os.makedirs(out_root)
 
-try:
-  target_layer = model._modules.get(layer)
-except:
-  print "wrong layer"
-  target_layers = [conv_1, conv_2, conv_4]
-
 # Get list of all file (image) names for VOC2007
 onlyfiles = [f for f in os.listdir(img_root) if os.path.isfile(os.path.join(img_root, f))]
 
 print colored('Starting image representation generation', 'green')
 # For given layer and each given input image, generate corresponding representation
-# net = model
+net = model
+for param in net.parameters():
+    param.requires_grad = False
 net.eval()
-for sample in onlyfiles:
+for sample in onlyfiles[:10]:
   im_filename = img_root+sample
-  print im_filename
+  
 
   im = Image.open(im_filename)
   im = im.resize((IMG_SIZE,IMG_SIZE)) # resize to IMG_SIZExIMG_SIZE
@@ -93,9 +92,10 @@ for sample in onlyfiles:
   t_img = Variable( torch.from_numpy(np.flip(in_[np.newaxis,:,:,:] ,axis=0).copy()))
   
   output = net.forward(t_img) 
-  output_prob = get_vector(t_img) # the output feature vector for the first image in the batch
+  # output_prob = get_vector(target_layer,t_img) # the output feature vector for the first image in the batch
+  print out_root+sample
   f = open(out_root+sample, 'w+')
-  np.save(f, output_prob)
+  np.save(f, output)
   f.close()
 
 print colored('Completed image representation generation.', 'green')
