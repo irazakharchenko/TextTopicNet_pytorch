@@ -147,7 +147,7 @@ for choose_set in choose_set_list:
 	output_path_root = './generated_data/multi_modal_retrieval/text/'
 	if not os.path.exists(output_path_root):
 		os.makedirs(output_path_root)
-	output_file_path = 'wd_txt_' + str(num_topics) + '_' + str(type_data) + '.json'
+	output_file_path = 'wd_txt_' + str(num_topics) + '_' + str(type_data) + '.txt'
 	output_path = output_path_root + output_file_path
 	# transform ALL documents into LDA space
 	TARGET_LABELS = {}
@@ -155,13 +155,13 @@ for choose_set in choose_set_list:
         	print colored('Generating text representation for document number : ' + str(len(TARGET_LABELS.keys())), 'green')
         	raw = open(i,'r').read()
         	process = preprocess_imageclef(raw)
-        	print "len raw / len process[0]  " + str(len(raw)) +" / " + str(len(process[0]))
+        	# print "len raw / len process[0]  " + str(len(raw)) +" / " + str(len(process[0]))
         	if process[1] != '':
                 	tokens = process[0]
-                	print tokens
+                	# print tokens
                 	bow_vector = dictionary.doc2bow(tokens)
-                	print "len bow_vector "+ str(len(bow_vector))
-                	lda_vector = ldamodel.get_document_topics(bow_vector, minimum_probability=None)
+                	# print "len bow_ve	ctor "+ str(len(bow_vector))
+                	lda_vector = ldamodel.get_document_topics(bow_vector[:10], minimum_probability=None)
                 	#lda_vector = ldamodel[bow_vector]
                 	lda_vector = sorted(lda_vector,key=lambda x:x[1],reverse=True)
                 	topic_prob = {}
@@ -177,7 +177,14 @@ for choose_set in choose_set_list:
                 	TARGET_LABELS[list_name[len(list_name) -1 ].split('.xml')[0]] = labels
 	
 	# Save thi as json.
-	json.dump(TARGET_LABELS, open(output_path,'w'))
+	with open(output_path,'w') as fp:
+		for key in TARGET_LABELS.keys():
+			s = key + "\t"
+			for el in TARGET_LABELS[key]:
+				s += str(el) + ","
+			s = s[:-1]
+			s += "\n"
+			fp.write(s)
 
 
 ### End : Generating text representation of wikipedia dataset for performing multi modal retrieval
@@ -205,8 +212,12 @@ for type_data in type_data_list:
 	image_ttp = {}
 	for i in GT_img2txt.keys():
         	sample = i
-        	value = np.load(image_rep + i + '.jpg')
-        	image_ttp[sample] = value
+        	try:
+        		value = np.load(image_rep + i + '.jpg')
+        		print "Error not here"
+        		image_ttp[sample] = value
+        	except:
+				continue
 	
 	# Convert text_rep to numpy format
 	text_ttp = {}
