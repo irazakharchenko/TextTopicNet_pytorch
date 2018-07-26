@@ -79,7 +79,7 @@ else:
     sys.stdout.flush()
     corpus = gensim.corpora.MmCorpus('./bow.mm')
 print ' Done!'
-
+print len(corpus)
 # Learn the LDA model
 print 'Learning the LDA model ...',
 sys.stdout.flush()

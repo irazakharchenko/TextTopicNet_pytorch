@@ -73,7 +73,7 @@ if len(sys.argv) < 2:
         print 'Please enter the type of query. Eg txt2img, img2txt'
         quit()
 query_type=sys.argv[1]
-
+# query_type="txt2img"
 ### Start : Generating image representations of wikipedia dataset for performing multi modal retrieval
 
 layer = 'prob' # Note : Since image and text has to be in same space for retieval. CNN layer has to be 'prob'
@@ -87,25 +87,25 @@ print colored('Model weights are loaded from : ' + PATH	, 'green')
 
 # Initialize pytorch model instnce with given weights and model prototxt
 net = torch.load(PATH)
-
+for param in net.parameters():
+    param.requires_grad = False
 IMG_SIZE = 256
 MODEL_INPUT_SIZE = 227
 MEAN = np.array([104.00698793, 116.66876762, 122.67891434])
 
 text_dir_wd = '../data/Wikipedia/wikipedia_dataset/texts/' # Path to wikipedia dataset text files
-img_root = "/home.guest/zakhairy/code/our_TextTopicNet/data/Wikipedia/wikipedia_dataset/images/" # Path to wikipedia dataset image files
+img_root = "../data/Wikipedia/wikipedia_dataset/images_wd_256/" # Path to wikipedia dataset image files
 image_categories = ['art', 'geography', 'literature', 'music', 'sport', 'biology', 'history', 'media', 'royalty', 'warfare'] # List of document (image-text) categories in wikipedia dataset
 
 # Generate representation for each image in wikipedia dataset
 for type_data in type_data_list:
-	# Specify path to wikipedia dataset image folder and output folder to store features
-	out_root = '/home.guest/zakhairy/code/our_TextTopicNet/generated_data/multi_modal_retrieval/image/' + str(layer) + '/' + str(num_topics) + '/' + str(type_data) + '/'
-	if not os.path.exists(out_root):	
-		os.makedirs(out_root)
-	print(str(type_data)+'set_txt_img_cat.list')
-	im_txt_pair_wd = open('/mnt/lascar/qqiscen/src/TextTopicNet/data/Wikipedia/'+str(type_data)+'set_txt_img_cat.list', 'r').readlines() # Image-text pairs
-	img_files = [i.split('\t')[1] + '.jpg' for i in im_txt_pair_wd] # List of image files in wikipedia dataset
-	for sample in img_files:
+    # Specify path to wikipedia dataset image folder and output folder to store features
+    out_root = '/home.guest/zakhairy/code/our_TextTopicNet/generated_data/multi_modal_retrieval/image/' + str(layer) + '/' + str(num_topics) + '/' + str(type_data) + '/'
+    if not os.path.exists(out_root):	
+        os.makedirs(out_root)
+    im_txt_pair_wd = open('/mnt/lascar/qqiscen/src/TextTopicNet/data/Wikipedia/'+str(type_data)+'set_txt_img_cat.list', 'r').readlines() # Image-text pairs
+    img_files = [i.split('\t')[1] + '.jpg' for i in im_txt_pair_wd] # List of image files in wikipedia dataset
+    for sample in img_files:
         	im_filename = img_root+sample
         	print colored('Generating image representation for : ' + im_filename, 'green')
         	im = Image.open(im_filename)
@@ -117,11 +117,12 @@ for type_data in type_data_list:
         	in_ = in_[:,:,::-1] # switch channels RGB -> BGR
         	in_ -= MEAN # subtract mean
         	in_ = in_.transpose((2,0,1)) # transpose to channel x height x width order
-        	net.blobs['data'].data[...] = in_[np.newaxis,:,:,:]
-        	output = net.forward()
-        	output_prob = net.blobs[layer].data[0] # the output feature vector for the first image in the batch
-        	f = open(out_root+sample, 'w+')
-        	np.save(f, output_prob)
+        	t_img = Variable( torch.from_numpy(np.flip(in_[np.newaxis,:,:,:] ,axis=0).copy()))
+        	output = net.forward(t_img) 
+        	# output_prob = net.blobs[layer].data[0] # the output feature vector for the first image in the batch
+        	print(output)	
+        	f = open(out_root+sample, "w+")
+        	np.save(f, output)
         	f.close()
 print 'Finished generating representation for wikipedia dataset images'
 ### End : Generating image representations of wikipedia dataset for performing multi modal retrieval
@@ -148,17 +149,18 @@ for choose_set in choose_set_list:
 		os.makedirs(output_path_root)
 	output_file_path = 'wd_txt_' + str(num_topics) + '_' + str(type_data) + '.json'
 	output_path = output_path_root + output_file_path
-
 	# transform ALL documents into LDA space
 	TARGET_LABELS = {}
-	
 	for i in text_files_wd:
         	print colored('Generating text representation for document number : ' + str(len(TARGET_LABELS.keys())), 'green')
         	raw = open(i,'r').read()
         	process = preprocess_imageclef(raw)
+        	print str(len(raw)) +" / " + str(len(process[0]))
         	if process[1] != '':
                 	tokens = process[0]
+                	# print tokens
                 	bow_vector = dictionary.doc2bow(tokens)
+                	print len(bow_vector)
                 	lda_vector = ldamodel.get_document_topics(bow_vector, minimum_probability=None)
                 	#lda_vector = ldamodel[bow_vector]
                 	lda_vector = sorted(lda_vector,key=lambda x:x[1],reverse=True)

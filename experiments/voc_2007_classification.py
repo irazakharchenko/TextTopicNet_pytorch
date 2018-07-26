@@ -93,7 +93,7 @@ for sample in onlyfiles[:10]:
   
   output = net.forward(t_img) 
   # output_prob = get_vector(target_layer,t_img) # the output feature vector for the first image in the batch
-  print out_root+sample
+  # print out_root+sample
   f = open(out_root+sample, 'w+')
   np.save(f, output)
   f.close()
@@ -112,7 +112,7 @@ cs = [13,14,15,16,17,18] # List of margins for SVM
 # Specify ground truth paths for PASCAL VOC2007 dataset
 gt_root = '/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/SVMs/VOC2007/GT_labels/'
 gt_train_sufix = '_train.txt'
-gt_val_sufix = '_val.txt'
+gt_val_sufix = '_val.tx
 gt_test_sufix = '_test.txt'
 
 mAP2 = 0
