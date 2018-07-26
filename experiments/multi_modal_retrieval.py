@@ -155,12 +155,12 @@ for choose_set in choose_set_list:
         	print colored('Generating text representation for document number : ' + str(len(TARGET_LABELS.keys())), 'green')
         	raw = open(i,'r').read()
         	process = preprocess_imageclef(raw)
-        	print str(len(raw)) +" / " + str(len(process[0]))
+        	print "len raw / len process[0]  " + str(len(raw)) +" / " + str(len(process[0]))
         	if process[1] != '':
                 	tokens = process[0]
-                	# print tokens
+                	print tokens
                 	bow_vector = dictionary.doc2bow(tokens)
-                	print len(bow_vector)
+                	print "len bow_vector "+ str(len(bow_vector))
                 	lda_vector = ldamodel.get_document_topics(bow_vector, minimum_probability=None)
                 	#lda_vector = ldamodel[bow_vector]
                 	lda_vector = sorted(lda_vector,key=lambda x:x[1],reverse=True)
