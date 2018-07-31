@@ -225,13 +225,9 @@ for type_data in type_data_list:
 	image_ttp = {}
 	for i in GT_img2txt.keys():
         	sample = i
-        	try:
-        		value = np.load(image_rep + i + '.jpg')
-        		print "Error not here"
-        		image_ttp[sample] = value
-        	except:
-				continue
-	
+        	value = np.load(image_rep + i + '.jpg')
+        	image_ttp[sample] = value
+
 	# Convert text_rep to numpy format
 	text_ttp = {}
 	for i in data_text.keys():
@@ -243,6 +239,7 @@ for type_data in type_data_list:
 	        counter = 0
         	order_of_images = sorted(image_ttp.keys())
         	order_of_texts = sorted(text_ttp.keys())
+        	print order_of_images
         	for given_image in order_of_images:
                 	print colored('Performing retrieval for document number : ' + str(counter), 'green')
                 	score_texts = []
@@ -254,6 +251,7 @@ for type_data in type_data_list:
                 	sorted_scores = sorted(score_texts, key=lambda x:x[1],reverse=False)
                 	mAP = mAP + get_AP_img2txt(sorted_scores, given_image, top_k=len(order_of_texts))
                 	counter += 1
+        	print image_ttp
         	print colored('MAP img2txt : ' + str(float(mAP/len(image_ttp.keys()))), 'red')
 	if query_type == 'txt2img' :
         	counter = 0
