@@ -120,7 +120,7 @@ for type_data in type_data_list:
         	t_img = Variable( torch.from_numpy(np.flip(in_[np.newaxis,:,:,:] ,axis=0).copy()))
         	output = net.forward(t_img) 
         	# output_prob = net.blobs[layer].data[0] # the output feature vector for the first image in the batch
-        	print(output)	
+        	# print(output)	
         	f = open(out_root+sample, "w+")
         	np.save(f, output)
         	f.close()
@@ -161,7 +161,10 @@ for choose_set in choose_set_list:
                 	# print tokens
                 	bow_vector = dictionary.doc2bow(tokens)
                 	# print "len bow_ve	ctor "+ str(len(bow_vector))
-                	lda_vector = ldamodel.get_document_topics(bow_vector[:10], minimum_probability=None)
+                	
+                	while bow_vector[-1][0] > 100000:
+                	    bow_vector = bow_vector[:int(-0.05*len(bow_vector))]
+                	lda_vector = ldamodel.get_document_topics(bow_vector[:], minimum_probability=None)
                 	#lda_vector = ldamodel[bow_vector]
                 	lda_vector = sorted(lda_vector,key=lambda x:x[1],reverse=True)
                 	topic_prob = {}
@@ -207,7 +210,17 @@ for type_data in type_data_list:
 	image_rep = './generated_data/multi_modal_retrieval/image/' + str(layer) + '/' + str(num_topics) + '/' + str(type_data) + '/'
 
 	# Load text representation
-	data_text = json.load(open('./generated_data/multi_modal_retrieval/text/wd_txt_' + str(num_topics) + '_' + str(type_data) + '.json','r'))
+	# data_text = json.load(open('./generated_data/multi_modal_retrieval/text/wd_txt_' + str(num_topics) + '_' + str(type_data) + '.json','r'))
+	data_text = {}
+	with open('./generated_data/multi_modal_retrieval/text/wd_txt_' + str(num_topics) + '_' + str(type_data) + '.txt', "r") as inp:
+        	li = inp.readline()
+        	while li :
+        		key, val = li.split("\t")
+        		data_text[key] = eval("["+val+"]")
+        		
+        		li = inp.readline()
+                
+
 
 	image_ttp = {}
 	for i in GT_img2txt.keys():
