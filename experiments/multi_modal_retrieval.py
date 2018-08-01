@@ -176,9 +176,9 @@ for choose_set in choose_set_list:
                                 	labels.append(topic_prob[topic_num])
                         	else:
                                 	labels.append(0)
-                	list_name = list_name = i.split('/')
+                	list_name =  i.split('/')
                 	TARGET_LABELS[list_name[len(list_name) -1 ].split('.xml')[0]] = labels
-	
+	print TARGET_LABELS
 	# Save thi as json.
 	with open(output_path,'w') as fp:
 		for key in TARGET_LABELS.keys():
@@ -198,7 +198,7 @@ for type_data in type_data_list:
 	# Wikipedia data paths
 	im_txt_pair_wd = open('../data/Wikipedia/'+str(type_data)+'set_txt_img_cat.list', 'r').readlines()
 	image_files_wd = [i.split('\t')[1] + '.jpg' for i in im_txt_pair_wd]
-
+	print "len im_txt_pair_wd "+ str(len(im_txt_pair_wd))
 	# Read the required Grount Truth for the task.
 	GT_img2txt = {} # While retrieving text, you need image as key.
 	GT_txt2img = {} # While retrieving image, you need text as key.
