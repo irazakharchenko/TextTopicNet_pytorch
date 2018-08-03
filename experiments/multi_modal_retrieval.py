@@ -147,8 +147,8 @@ for choose_set in choose_set_list:
 	output_path_root = './generated_data/multi_modal_retrieval/text/'
 	if not os.path.exists(output_path_root):
 		os.makedirs(output_path_root)
-	output_file_path = 'wd_txt_' + str(num_topics) + '_' + str(type_data) + '.txt'
-	output_path = output_path_root + output_file_path
+	output
+	th = output_path_root + output_file_path
 	# transform ALL documents into LDA space
 	TARGET_LABELS = {}
 	for i in text_files_wd:
