@@ -27,7 +27,7 @@ os.environ["CUDA_VISIBLE_DEVICES"]="5"
 model_names = sorted(name for name in models.__dict__
     if name.islower() and not name.startswith("__")
     and callable(models.__dict__[name]))
-
+# 80 epochs 
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 parser.add_argument('data', metavar='DIR', default='/mnt/lascar/qqiscen/src/TextTopicNet/data/ImageCLEF_Wikipedia/',
                     help='path to dataset')
@@ -124,14 +124,16 @@ def main():
     cudnn.benchmark = True
 
     
-    print 'Load train dataset'
+    print('Load train dataset')
 
     ### need to add normalize
     train_dataset = ImageDataset(
         "/home.guest/zakhairy/code/our_TextTopicNet/LDA/training_labels40.txt", args.data,
         transforms.Compose([
-            Rescale(256),
-            RandomCrop(227),
+            
+            Rescale((256,256)),
+            RandomCrop((227,227)),
+            Mirroring(),    
             Normalize([104.00698793, 116.66876762, 122.67891434]),  
         ]))
 
@@ -156,6 +158,7 @@ def main():
         
         
     torch.save(model, "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model")
+    torch.save(model.state_dict(),"/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model_dict")
 
 def train(train_loader, model, criterion, optimizer, epoch):
     batch_time = AverageMeter()
@@ -177,7 +180,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
        
         input, target = Variable(input), Variable(target)
        
-        target = target.cuda(non_blocking=True)
+        target = target.cuda()
 
         # compute output
         output = model(input)   
@@ -186,7 +189,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
 
         # measure record loss
 
-        losses.update(loss.item(), input.size(0))
+        losses.update(loss.data[0], input.size(0))
         
         # compute gradient and do SGD step
         optimizer.zero_grad()

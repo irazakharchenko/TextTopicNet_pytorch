@@ -11,6 +11,7 @@ from ast import literal_eval
 from PIL import Image
 from random import randint
 from shutil import copyfile
+
 # Ignore warnings
 import warnings
 warnings.filterwarnings("ignore")
@@ -60,11 +61,13 @@ class ImageDataset(Dataset):
             image = image.convert('RGB')
         image = np.asarray(image)
         topics = self.topics[idx]
-        if self.transform:
+        if self.transform :
             image, topics = self.transform([image,  topics])
-        
+
         image = image.transpose((2, 0, 1))
-        image = torch.from_numpy(np.flip(image,axis=0).copy()   ).float()
+
+        # print("image size {}".format(image.shape))
+        image = torch.from_numpy(np.flip(image,axis=0).copy()).float()
         topics = torch.from_numpy(np.asarray(topics)).long()
         
         return [image,  topics]
@@ -79,25 +82,14 @@ class Rescale(object):
     """
 
     def __init__(self, output_size):
-        assert isinstance(output_size, (int, tuple))
+        assert isinstance(output_size, tuple)
         self.output_size = output_size
 
     def __call__(self, sample):
         image, landmarks = sample[0], sample[1]
 
-        h, w = image.shape[:2]
-        if isinstance(self.output_size, int):
-            if h > w:
-                new_h, new_w = self.output_size * h / w, self.output_size
-            else:
-                new_h, new_w = self.output_size, self.output_size * w / h
-        else:
-            new_h, new_w = self.output_size
-
-        new_h, new_w = int(new_h), int(new_w)
-
-        img = transform.resize(image, (new_h, new_w))
-
+        img = transform.resize(image, self.output_size)
+        
         return [img, landmarks]
 
 
@@ -110,12 +102,10 @@ class RandomCrop(object):
     """
 
     def __init__(self, output_size):
-        assert isinstance(output_size, (int, tuple))
-        if isinstance(output_size, int):
-            self.output_size = (output_size, output_size)
-        else:
-            assert len(output_size) == 2
-            self.output_size = output_size
+        assert isinstance(output_size, tuple)
+        
+        assert len(output_size) == 2
+        self.output_size = output_size
 
     def __call__(self, sample):
         image, landmarks = sample
@@ -129,22 +119,38 @@ class RandomCrop(object):
         image = image[top: top + new_h,
                       left: left + new_w]
 
-        
-
+        # print("shape img in random crop {}".format(image.shape))
         return [ image,  landmarks]
 
 
 class Normalize(object):
     "Normalize image"
     def __init__(self, mean):
-        self.mean = torch.FloatTensor(mean)
+        self.mean = np.array(mean, dtype='f')
       
 
     def __call__(self, sample):
         image, landmarks = sample
-        image = image[:,:,::-1] # switch channels RGB -> BGR
-        image -= self.mean
+        image = image[:,:,::-1] # switch channels RGB -> BGR0
+        
+        # print("image {}, image after substraction {}".format(image[0][:10], (image - self.mean)[0][:10]))
+        # print("image size {}".format(image.shape))  
+        image = image - self.mean
+        # print("image size {}".format(image.shape))
         return [image, landmarks]
+
+class Mirroring(object):
+    "Mirror image"
+    def __init__(self,):
+        pass
+    def __call__(self, sample):
+        image, landmarks = sample
+        im = image
+        if randint(0,1) == 1:
+            im = im[::-1,::-1,:]
+
+        return [im, landmarks]
+        
 
 
 def to_rgb2(im):
@@ -152,4 +158,4 @@ def to_rgb2(im):
     w, h = im.size
     ret = np.empty((w, h, 3), dtype=np.uint8)
     ret[:, :, :] = im[:, :, np.newaxis]
-    return ret
+    return ret 
