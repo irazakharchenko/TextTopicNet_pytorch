@@ -83,26 +83,26 @@ for param in net.parameters():
     param.requires_grad = False
 
 # query images
-X = np.empty((40,cfg['nq']))
+X = np.empty((cfg['nq'], 40))
 
 for i in np.arange(cfg['nq']):
     qim = pil_loader(cfg['qim_fname'](cfg, i))
     t_im = transformation(qim)
     output = net.forward(t_im)
-    output.t()
-    print("{} {}".format(X[:,i].shape, output.size()))
-    X[:,i] = output
+    print("{}".format(np.array(output[0,0])))
+    # print("{}".format(np.squeeze(output).size()))
+    X[i] = output.data.cpu().numpy()
     print('>> {}: Processing query image {}'.format(test_dataset, i+1))
-np.save(outfile_X, X)
+np.save(outfile_X, np.transpose(X))
 
-Y = np.empty((1000,cfg['nq']))
+Y = np.empty((cfg['nq'], 40))
 
 for i in np.arange(cfg['n']):
     im = pil_loader(cfg['im_fname'](cfg, i))
-    ##------------------------------------------------------
-    ## Perform image processing here, eg, feature extraction
-    ##------------------------------------------------------
-    output = net.forward(qim)
-    Y[:,i] = output 
+    t_im = transformation(im)
+    output = net.forward(t_im)
+    print("{}".format(np.array(output[0,0])))
+    # print("{}".format(np.squeeze(output).size()))
+    Y[i] = output.data.cpu().numpy()
     print('>> {}: Processing database image {}'.format(test_dataset, i+1))
-np.save(outfile_Y, Y)
+np.save(outfile_Y, np.transpose(Y))

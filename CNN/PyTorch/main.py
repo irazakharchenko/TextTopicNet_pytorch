@@ -159,6 +159,7 @@ def main():
         
     torch.save(model, "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model")
     torch.save(model.state_dict(),"/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model_dict")
+    print("All done, training {} epochs".format(args.epochs))
 
 def train(train_loader, model, criterion, optimizer, epoch):
     batch_time = AverageMeter()
