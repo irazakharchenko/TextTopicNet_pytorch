@@ -26,7 +26,7 @@ os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"]="5"
 
 outfile_X = TemporaryFile()
-outfile_Y = TemporaryFile()
+outfile_Q = TemporaryFile()
 
 
 #---------------------------------------------------------------------
@@ -94,16 +94,17 @@ for param in net.parameters():
 X = np.empty(( 40, cfg['nq']))
 
 for i in np.arange(cfg['nq']):
-    qim = pil_loader(cfg['qim_fname'](cfg, i))
+    qim = pil_loader(cfg['qim_fname'](cfg, i)).crop(cfg['gnd'][i]['bbx'])
     t_im = transformation(qim)
     output = net.forward(t_im)
 
     X[:,i] = output.data.cpu().numpy()
-    print(X)
+
     print('>> {}: Processing query image {}'.format(test_dataset, i+1))
 X = normalized(X,0)
 np.save(outfile_X, X)
-
+np.savetxt('X.txt', X, fmt='%f')
+np.save("X.npy", X)
 Y = np.empty(( 40, cfg['n']))
 
 for i in np.arange(cfg['n']):
@@ -115,5 +116,5 @@ for i in np.arange(cfg['n']):
     Y[:,i] = output.data.cpu().numpy()
     print('>> {}: Processing database image {}'.format(test_dataset, i+1))
 Y = normalized(Y,0)
-np.save(outfile_Y, Y)
-
+np.savetxt('Q.txt', Y, fmt='%d')
+np.save("Q.npy", Y)

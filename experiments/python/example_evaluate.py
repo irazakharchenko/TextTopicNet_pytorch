@@ -20,7 +20,7 @@ from evaluate import compute_map
 # Set data folder and testing parameters
 #---------------------------------------------------------------------
 # Set data folder, change if you have downloaded the data somewhere else
-data_root = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'data')
+data_root = os.path.join("../../data/roxford")
 # Check, and, if necessary, download test data (Oxford and Pairs), 
 # revisited annotation, and example feature vectors for evaluation
 download_datasets(data_root)
@@ -40,10 +40,13 @@ cfg = configdataset(test_dataset, os.path.join(data_root, 'datasets'))
 
 # load query and database features
 print('>> {}: Loading features...'.format(test_dataset))    
-features = loadmat(os.path.join(data_root, 'features', '{}_resnet_rsfm120k_gem.mat'.format(test_dataset)))
-Q = features['Q']
-X = features['X']
-
+# features = loadmat(os.path.join(data_root, 'features', '{}_resnet_rsfm120k_gem.mat'.format(test_dataset)))
+# Q = features['Q']
+# X = features['X']
+# np.load(outfile_X)
+# np.load(outfile_Q)
+Q = np.load("Q.npy")
+X = np.load("X.npy")
 # perform search
 print('>> {}: Retrieval...'.format(test_dataset))
 sim = np.dot(X.T, Q)

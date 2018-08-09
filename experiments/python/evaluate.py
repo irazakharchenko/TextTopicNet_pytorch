@@ -79,7 +79,7 @@ def compute_map(ranks, gnd, kappas=[]):
         # sorted positions of positive and junk images (0 based)
         pos  = np.arange(ranks.shape[0])[np.in1d(ranks[:,i], qgnd)]
         junk = np.arange(ranks.shape[0])[np.in1d(ranks[:,i], qgndj)]
-
+        
         k = 0;
         ij = 0;
         if len(junk):
@@ -101,8 +101,10 @@ def compute_map(ranks, gnd, kappas=[]):
         # compute precision @ k
         pos += 1 # get it to 1-based
         for j in np.arange(len(kappas)):
-            kq = min(max(pos), kappas[j]); 
-            prs[i, j] = (pos <= kq).sum() / kq
+            print("pos {}, {}".format(pos,pos.shape))
+            if pos.shape[0] != 0:
+                kq = min(max(pos), kappas[j]); 
+                prs[i, j] = (pos <= kq).sum() / kq
         pr = pr + prs[i, :]
 
     map = map / (nq - nempty)
