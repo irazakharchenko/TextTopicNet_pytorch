@@ -101,7 +101,7 @@ for i in np.arange(cfg['nq']):
     X[:,i] = output.data.cpu().numpy()
     print(X)
     print('>> {}: Processing query image {}'.format(test_dataset, i+1))
-X = normalized(X)
+X = normalized(X,0)
 np.save(outfile_X, X)
 
 Y = np.empty(( 40, cfg['n']))
@@ -114,14 +114,6 @@ for i in np.arange(cfg['n']):
     # print("{}".format(np.squeeze(output).size()))
     Y[:,i] = output.data.cpu().numpy()
     print('>> {}: Processing database image {}'.format(test_dataset, i+1))
+Y = normalized(Y,0)
 np.save(outfile_Y, Y)
 
-
-lom = 0
-for i in range(cfg['nq']):
-    h  =0
-    for el in X[:,0]:
-        h += el ** 2
-    dif = abs(h-1)
-    if lom > dif:
-        lom = dif 
