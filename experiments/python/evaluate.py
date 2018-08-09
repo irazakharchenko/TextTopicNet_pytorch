@@ -105,6 +105,9 @@ def compute_map(ranks, gnd, kappas=[]):
             if pos.shape[0] != 0:
                 kq = min(max(pos), kappas[j]); 
                 prs[i, j] = (pos <= kq).sum() / kq
+            else:
+                kq =  kappas[j]
+                prs[i, j] = (pos <= kq).sum() / kq
         pr = pr + prs[i, :]
 
     map = map / (nq - nempty)
