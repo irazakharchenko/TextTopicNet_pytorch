@@ -17,6 +17,7 @@ from download import download_datasets
 
 import torch
 from torch.autograd import Variable
+import torch.nn as nn
 sys.path.insert(0, '/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch')
 import AlexNet_pool_norm
 from tempfile import TemporaryFile
@@ -75,6 +76,9 @@ def normalized(a, axis=-1, order=2):
 print ('>> {}: Processing test dataset...'.format(test_dataset)) 
 # config file for the dataset   
 # separates query image list from database image list, if revisited protocol used
+all_layers = [["pool5", -1], ["fc6", -2], ["fc7", -1, 4096]]
+our_layer = 2
+
 cfg = configdataset(test_dataset, os.path.join(data_root, 'datasets'))
 
 
@@ -86,12 +90,15 @@ print ('Model weights are loaded from : ' + PATH)
 # torch.nn.Module.dump_patches = True
 # net = AlexNet_pool_norm.AlexnetPoolNorm()
 net = torch.load(PATH)
+net.classifier = nn.Sequential(
+                    *list(net.classifier.children())[:-1]
+                )
 # net.load_state_dict(torch.load(PATH))
 for param in net.parameters():
     param.requires_grad = False
 
 # query images
-X = np.empty(( 40, cfg['nq']))
+X = np.empty(( 4096, cfg['nq']))
 
 for i in np.arange(cfg['nq']):
     qim = pil_loader(cfg['qim_fname'](cfg, i)).crop(cfg['gnd'][i]['bbx'])
@@ -103,9 +110,9 @@ for i in np.arange(cfg['nq']):
     print('>> {}: Processing query image {}'.format(test_dataset, i+1))
 X = normalized(X,0)
 np.save(outfile_X, X)
-np.savetxt('X.txt', X, fmt='%f')
-np.save("X.npy", X)
-Y = np.empty(( 40, cfg['n']))
+# np.savetxt('X_fc6.txt', X, fmt='%f')
+np.save("X_fc6.npy", X)
+Y = np.empty(( 4096, cfg['n']))
 
 for i in np.arange(cfg['n']):
     im = pil_loader(cfg['im_fname'](cfg, i))
@@ -116,5 +123,5 @@ for i in np.arange(cfg['n']):
     Y[:,i] = output.data.cpu().numpy()
     print('>> {}: Processing database image {}'.format(test_dataset, i+1))
 Y = normalized(Y,0)
-np.savetxt('Q.txt', Y, fmt='%d')
-np.save("Q.npy", Y)
+# np.savetxt('Q.txt', Y, fmt='%d')
+np.save("Q_fc6.npy", Y)

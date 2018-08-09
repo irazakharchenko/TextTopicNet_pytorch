@@ -45,8 +45,8 @@ print('>> {}: Loading features...'.format(test_dataset))
 # X = features['X']
 # np.load(outfile_X)
 # np.load(outfile_Q)
-Q = np.load("Q.npy")
-X = np.load("X.npy")
+Q = np.load("Q_fc6.npy")
+X = np.load("X_fc6.npy")
 # perform search
 print('>> {}: Retrieval...'.format(test_dataset))
 sim = np.dot(X.T, Q)

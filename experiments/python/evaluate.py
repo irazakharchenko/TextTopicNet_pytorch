@@ -101,16 +101,16 @@ def compute_map(ranks, gnd, kappas=[]):
         # compute precision @ k
         pos += 1 # get it to 1-based
         for j in np.arange(len(kappas)):
-            print("pos {}, {}".format(pos,pos.shape))
+            # print("pos {}, {}".format(pos,pos.shape))
             if pos.shape[0] != 0:
                 kq = min(max(pos), kappas[j]); 
                 prs[i, j] = (pos <= kq).sum() / kq
             else:
-                kq =  kappas[j]
+                kq = kappas[j]
                 prs[i, j] = (pos <= kq).sum() / kq
         pr = pr + prs[i, :]
 
     map = map / (nq - nempty)
     pr = pr / (nq - nempty)
 
-    return map, aps, pr, prs
+    return map, aps, pr, prs    
