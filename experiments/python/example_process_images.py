@@ -1,4 +1,4 @@
-# EXAMPLE_PROCESS_IMAGES  Code to read and process images for ROxford and RParis datasets.
+    # EXAMPLE_PROCESS_IMAGES  Code to read and process images for ROxford and RParis datasets.
 # Revisited protocol requires query images to be removed from the database, and cropped prior to any processing.
 # This code makes sure the protocol is strictly followed.
 #
@@ -22,8 +22,12 @@ import AlexNet_pool_norm
 from tempfile import TemporaryFile
 from torchvision import transforms
 
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   
+os.environ["CUDA_VISIBLE_DEVICES"]="5"
+
 outfile_X = TemporaryFile()
 outfile_Y = TemporaryFile()
+
 
 #---------------------------------------------------------------------
 # Set data folder and testing parameters
@@ -63,9 +67,13 @@ def transformation(im):
     return t_img
 
 
+def normalized(a, axis=-1, order=2):
+    l2 = np.atleast_1d(np.linalg.norm(a, order, axis))
+    l2[l2==0] = 1
+    return a / np.expand_dims(l2, axis)
 
 print ('>> {}: Processing test dataset...'.format(test_dataset)) 
-# config file for the dataset
+# config file for the dataset   
 # separates query image list from database image list, if revisited protocol used
 cfg = configdataset(test_dataset, os.path.join(data_root, 'datasets'))
 
@@ -83,26 +91,37 @@ for param in net.parameters():
     param.requires_grad = False
 
 # query images
-X = np.empty((cfg['nq'], 40))
+X = np.empty(( 40, cfg['nq']))
 
 for i in np.arange(cfg['nq']):
     qim = pil_loader(cfg['qim_fname'](cfg, i))
     t_im = transformation(qim)
     output = net.forward(t_im)
-    print("{}".format(np.array(output[0,0])))
-    # print("{}".format(np.squeeze(output).size()))
-    X[i] = output.data.cpu().numpy()
-    print('>> {}: Processing query image {}'.format(test_dataset, i+1))
-np.save(outfile_X, np.transpose(X))
 
-Y = np.empty((cfg['nq'], 40))
+    X[:,i] = output.data.cpu().numpy()
+    print(X)
+    print('>> {}: Processing query image {}'.format(test_dataset, i+1))
+X = normalized(X)
+np.save(outfile_X, X)
+
+Y = np.empty(( 40, cfg['n']))
 
 for i in np.arange(cfg['n']):
     im = pil_loader(cfg['im_fname'](cfg, i))
     t_im = transformation(im)
     output = net.forward(t_im)
-    print("{}".format(np.array(output[0,0])))
+    # print("{}".format(np.array(output[0,0])))
     # print("{}".format(np.squeeze(output).size()))
-    Y[i] = output.data.cpu().numpy()
+    Y[:,i] = output.data.cpu().numpy()
     print('>> {}: Processing database image {}'.format(test_dataset, i+1))
-np.save(outfile_Y, np.transpose(Y))
+np.save(outfile_Y, Y)
+
+
+lom = 0
+for i in range(cfg['nq']):
+    h  =0
+    for el in X[:,0]:
+        h += el ** 2
+    dif = abs(h-1)
+    if lom > dif:
+        lom = dif 
