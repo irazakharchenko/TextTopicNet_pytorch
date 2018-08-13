@@ -14,7 +14,7 @@ class AlexnetPoolNorm(nn.Module):
             nn.Conv2d(3, 64, kernel_size=11, stride=4, padding=2),  #1
             nn.ReLU(inplace=True), 
             # nn.LocalResponseNorm(5, alpha=1e-4, beta=0.75),
-            nn.MaxPool2d(kernel_size=3, stride=2)
+            nn.MaxPool2d(kernel_size=3, stride=2),
             nn.Conv2d(64, 192, kernel_size=5, padding=2),           #2
             nn.ReLU(inplace=True),
             # nn.LocalResponseNorm(5, alpha=1e-4, beta=0.75),
