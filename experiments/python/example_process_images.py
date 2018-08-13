@@ -76,8 +76,8 @@ def normalized(a, axis=-1, order=2):
 print ('>> {}: Processing test dataset...'.format(test_dataset)) 
 # config file for the dataset   
 # separates query image list from database image list, if revisited protocol used
-all_layers = [["pool5", -1], ["fc6", -2], ["fc7", -1, 4096]]
-our_layer = 2
+layers = [["pool5",  0, 256 * 6 * 6], ["fc6", 2, 4096], ["fc7", -2, 4096]]
+our_layer = 1
 
 cfg = configdataset(test_dataset, os.path.join(data_root, 'datasets'))
 
@@ -85,23 +85,23 @@ cfg = configdataset(test_dataset, os.path.join(data_root, 'datasets'))
 PATH = "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model"
 print ('Model weights are loaded from : ' + PATH)
 
-# Initialize pytorch model instnce with given weights and model prototxt
-# 'torch.nn.parallel.data_parallel.DataParallel' has changed.
-# torch.nn.Module.dump_patches = True
-# net = AlexNet_pool_norm.AlexnetPoolNorm()
 net = torch.load(PATH)
-print(list(net.classifier.children()))
-net.classifier = nn.Sequential(
-                    *list(net.classifier.children())[:-1]
+
+if layers[our_layer][0] == "pool5":
+    net.classifier = nn.Sequential()
+else:
+    net.classifier = nn.Sequential(
+                    *list(net.classifier.children())[:layers[our_layer][1]]
                 )
 # net.load_state_dict(torch.load(PATH))
 for param in net.parameters():
     param.requires_grad = False
 
 # query images
-X = np.empty(( 4096, cfg['nq']))
+X = np.empty(( layers[our_layer][2], cfg['nq']))
 
 for i in np.arange(cfg['nq']):
+    
     qim = pil_loader(cfg['qim_fname'](cfg, i)).crop(cfg['gnd'][i]['bbx'])
     t_im = transformation(qim)
     output = net.forward(t_im)
@@ -110,10 +110,12 @@ for i in np.arange(cfg['nq']):
 
     print('>> {}: Processing query image {}'.format(test_dataset, i+1))
 X = normalized(X,0)
-np.save(outfile_X, X)
-# np.savetxt('X_fc6.txt', X, fmt='%f')
-np.save("X_fc6.npy", X)
-Y = np.empty(( 4096, cfg['n']))
+np.save(outfile_X, X)   
+# save X to file
+np.save("X_"+layers[our_layer][0] +".npy", X)
+
+
+Q = np.empty(( layers[our_layer][2], cfg['n']))
 
 for i in np.arange(cfg['n']):
     im = pil_loader(cfg['im_fname'](cfg, i))
@@ -121,8 +123,8 @@ for i in np.arange(cfg['n']):
     output = net.forward(t_im)
     # print("{}".format(np.array(output[0,0])))
     # print("{}".format(np.squeeze(output).size()))
-    Y[:,i] = output.data.cpu().numpy()
+    Q[:,i] = output.data.cpu().numpy()
     print('>> {}: Processing database image {}'.format(test_dataset, i+1))
-Y = normalized(Y,0)
-# np.savetxt('Q.txt', Y, fmt='%d')
-np.save("Q_fc6.npy", Y)
+Q = normalized(Q,0)
+# save Q to file
+np.save("Q_"+layers[our_layer][0] +".npy", Q)
