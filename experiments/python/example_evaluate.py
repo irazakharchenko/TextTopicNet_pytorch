@@ -51,7 +51,7 @@ X = np.load("X_fc6.npy")
 print('>> {}: Retrieval...'.format(test_dataset))
 sim = np.dot(X.T, Q)
 ranks = np.argsort(-sim, axis=0)
-
+    
 # revisited evaluation
 gnd = cfg['gnd']
 
