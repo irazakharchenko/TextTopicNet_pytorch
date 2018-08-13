@@ -24,7 +24,7 @@ from tempfile import TemporaryFile
 from torchvision import transforms
 
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   
-os.environ["CUDA_VISIBLE_DEVICES"]="5"
+os.environ["CUDA_VISIBLE_DEVICES"]="6"
 
 outfile_X = TemporaryFile()
 outfile_Q = TemporaryFile()
@@ -90,6 +90,7 @@ print ('Model weights are loaded from : ' + PATH)
 # torch.nn.Module.dump_patches = True
 # net = AlexNet_pool_norm.AlexnetPoolNorm()
 net = torch.load(PATH)
+print(list(net.classifier.children()))
 net.classifier = nn.Sequential(
                     *list(net.classifier.children())[:-1]
                 )
