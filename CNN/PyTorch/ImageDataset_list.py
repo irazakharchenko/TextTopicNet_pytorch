@@ -11,6 +11,7 @@ from ast import literal_eval
 from PIL import Image
 from random import randint
 from shutil import copyfile
+import json
 
 # Ignore warnings
 import warnings
@@ -30,18 +31,23 @@ class ImageDataset(Dataset):
         """
         self.topics = []
         self.images = []
-        
         with open(file, "r") as inp:
-            li = inp.readline()
-            while li :
-                key, val = li.split("\t")
-                
-                self.images.append(key)
-                self.topics.append(literal_eval("[" + val + "]"))
-                # if  len > 0 and randint(0,2) == 1:
-                #     copyfile(root_dir + key, "/home.guest/zakhairy/code/our_TextTopicNet/data/some_ph/" + key.split("/")[-1])
-                #     len -= 1
+            if file.endswith("json"):
+                data = json.load(inp)
+                for key in data.keys():
+                    if "/25/" in key or "/26/" in key:
+                        continue
+                    self.images.append(key)
+                    self.topics.append(data[key])
+            else: 
+            
                 li = inp.readline()
+                while li :
+                    key, val = li.split("\t")
+                    
+                    self.images.append(key)
+                    self.topics.append(literal_eval("[" + val + "]"))
+                    li = inp.readline()
                 
         self.root_dir = root_dir
         self.transform = transform
