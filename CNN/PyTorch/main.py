@@ -21,7 +21,7 @@ from ImageDataset_list import *
 import AlexNet_pool_norm
 
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   
-os.environ["CUDA_VISIBLE_DEVICES"]="5"
+os.environ["CUDA_VISIBLE_DEVICES"]="6"
 
 
 model_names = sorted(name for name in models.__dict__
@@ -38,7 +38,7 @@ parser.add_argument('--arch', '-a', metavar='ARCH', default='alexnet',
                         ' (default: alexnet)')
 parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                     help='number of data loading workers (default: 4)')
-parser.add_argument('--epochs', default=80, type=int, metavar='N',
+parser.add_argument('--epochs', default=1, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
@@ -50,7 +50,7 @@ parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                     help='momentum')
 parser.add_argument('--weight-decay', '--wd', default=1e-4, type=float,
                     metavar='W', help='weight decay (default: 1e-4)')
-parser.add_argument('--print-freq', '-p', default=35, type=int,
+parser.add_argument('--print-freq', '-p', default=28, type=int,
                     metavar='N', help='print frequency (default: 10)')
 parser.add_argument('--resume', default='', type=str, metavar='PATH',
                     help='path to latest checkpoint (default: none)')
@@ -128,7 +128,7 @@ def main():
 
     ### need to add normalize
     train_dataset = ImageDataset(
-        "/home.guest/zakhairy/code/our_TextTopicNet/LDA/training_labels40.txt", args.data,
+        "/home.guest/zakhairy/code/our_TextTopicNet/LDA/training_labels40.json", args.data,
         transforms.Compose([
             
             Rescale((256,256)),
@@ -172,9 +172,6 @@ def train(train_loader, model, criterion, optimizer, epoch):
     
     end = time.time()
     
-    # for i, (input, target) in enumerate(train_loader):
-        
-    # j = 0
     for i, (input, target) in enumerate(train_loader):
         # measure data loading time
         data_time.update(time.time() - end)
