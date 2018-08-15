@@ -38,7 +38,7 @@ parser.add_argument('--arch', '-a', metavar='ARCH', default='alexnet',
                         ' (default: alexnet)')
 parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                     help='number of data loading workers (default: 4)')
-parser.add_argument('--epochs', default=1, type=int, metavar='N',
+parser.add_argument('--epochs', default=80, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
@@ -50,7 +50,7 @@ parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                     help='momentum')
 parser.add_argument('--weight-decay', '--wd', default=1e-4, type=float,
                     metavar='W', help='weight decay (default: 1e-4)')
-parser.add_argument('--print-freq', '-p', default=28, type=int,
+parser.add_argument('--print-freq', '-p', default=10, type=int,
                     metavar='N', help='print frequency (default: 10)')
 parser.add_argument('--resume', default='', type=str, metavar='PATH',
                     help='path to latest checkpoint (default: none)')
@@ -155,7 +155,7 @@ def main():
 
         # train for one epoch
         train(train_loader, model, criterion, optimizer, epoch)
-        
+        torch.save(model, "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model")
         
     torch.save(model, "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model")
     torch.save(model.state_dict(),"/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model_dict")
@@ -175,15 +175,16 @@ def train(train_loader, model, criterion, optimizer, epoch):
     for i, (input, target) in enumerate(train_loader):
         # measure data loading time
         data_time.update(time.time() - end)
-       
+        
         input, target = Variable(input), Variable(target)
-       
+        
         target = target.cuda()
 
         # compute output
         output = model(input)   
 	   
-        loss = criterion(output, target.float())
+        loss = criterion(output, target)
+        
 
         # measure record loss
 
@@ -206,6 +207,8 @@ def train(train_loader, model, criterion, optimizer, epoch):
                    .format(
                    epoch, i, len(train_loader), batch_time=batch_time,
                    data_time=data_time, loss=losses))
+            # print(target)
+            
 
 
 def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):

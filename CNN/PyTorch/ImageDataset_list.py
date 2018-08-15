@@ -36,6 +36,7 @@ class ImageDataset(Dataset):
                 data = json.load(inp)
                 for key in data.keys():
                     if "/25/" in key or "/26/" in key:
+                        # these folders are missed
                         continue
                     self.images.append(key)
                     self.topics.append(data[key])
@@ -48,7 +49,7 @@ class ImageDataset(Dataset):
                     self.images.append(key)
                     self.topics.append(literal_eval("[" + val + "]"))
                     li = inp.readline()
-                
+            
         self.root_dir = root_dir
         self.transform = transform
 
@@ -70,11 +71,11 @@ class ImageDataset(Dataset):
         if self.transform :
             image, topics = self.transform([image,  topics])
 
-        image = image.transpose((2, 0, 1))
-
+        image = image.transpose((2, 0, 1))  
+        # print([ x for x in topics if x != 0])
         # print("image size {}".format(image.shape))
         image = torch.from_numpy(np.flip(image,axis=0).copy()).float()
-        topics = torch.from_numpy(np.asarray(topics)).long()
+        topics = torch.from_numpy(np.asarray(topics)).float()
         
         return [image,  topics]
 
