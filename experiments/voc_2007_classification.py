@@ -163,7 +163,7 @@ for cl in classes:
   XX_scaled = scaler.transform(XX)
 
   for c in cs:
-    print "processing margin" + str(c) + " out of "+ str(cs)
+    print "processing margin " + str(c) + " out of "+ str(cs)
     clf = svm.LinearSVC(C=pow(0.5,c))
     clf.fit(X_scaled, y)
     #yy_ = clf.predict(XX)
