@@ -20,14 +20,10 @@ from torch.autograd import Variable
 import torch.nn as nn
 sys.path.insert(0, '/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch')
 import AlexNet_pool_norm
-from tempfile import TemporaryFile
 from torchvision import transforms
 
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   
-os.environ["CUDA_VISIBLE_DEVICES"]="6"
-
-outfile_X = TemporaryFile()
-outfile_Q = TemporaryFile()
+os.environ["CUDA_VISIBLE_DEVICES"]="5"
 
 
 #---------------------------------------------------------------------
@@ -82,7 +78,7 @@ our_layer = 1
 cfg = configdataset(test_dataset, os.path.join(data_root, 'datasets'))
 
 
-PATH = "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model"
+PATH = "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model5"
 print ('Model weights are loaded from : ' + PATH)
 
 net = torch.load(PATH)
@@ -114,7 +110,7 @@ np.save(outfile_X, X)
 # save X to file
 np.save("X_"+layers[our_layer][0] +".npy", X)
 
-
+# 5000
 Q = np.empty(( layers[our_layer][2], cfg['n']))
 
 for i in np.arange(cfg['n']):
