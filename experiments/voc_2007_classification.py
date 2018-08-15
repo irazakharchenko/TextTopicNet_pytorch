@@ -50,7 +50,7 @@ os.environ["CUDA_VISIBLE_DEVICES"]="5"
 # layer = sys.argv[1]
 layer = "fc7"
 # Specify paths to model prototxt and model weights
-PATH = "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model"
+PATH = "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model6"
 # Initialize pytorch model instnce with given weights and model prototxt
 net = torch.load(PATH)
 new_classifier = nn.Sequential(*list(net.classifier.children())[:-2])
@@ -74,6 +74,8 @@ print colored('Starting image representation generation', 'green')
 for param in net.parameters():
     param.requires_grad = False
 net.eval()
+
+# !!!!
 for sample in onlyfiles[:10]:
   im_filename = img_root+sample
   
@@ -114,8 +116,8 @@ gt_val_sufix = '_val.txt'
 gt_test_sufix = '_test.txt'
 
 mAP2 = 0
-
-for cl in classes:
+# !!!!!
+for cl in classes[:1]:
 
   print colored("Do grid search for class "+cl, 'green')
   with open(gt_root+cl+gt_train_sufix) as f:
@@ -161,8 +163,8 @@ for cl in classes:
   joblib.dump(scaler, './generated_data/voc_2007_classification/features_'+layer+'/scaler.pkl')
   X_scaled = scaler.transform(X)
   XX_scaled = scaler.transform(XX)
-
-  for c in cs:
+  #!!!!!
+  for c in cs[:1]:
     print "processing margin " + str(c) + " out of "+ str(cs)
     clf = svm.LinearSVC(C=pow(0.5,c))
     clf.fit(X_scaled, y)
@@ -195,20 +197,24 @@ if not os.path.exists(res_root):
   os.makedirs(res_root)
 
 mAP2=0
-
-for cl in classes:
+#!!!!
+for cl in classes[:1]:
   
   with open(gt_root+cl+gt_test_sufix) as f:
     content = f.readlines()
   print "Testing one vs. rest SVC for class "+cl+" for "+str(len(content))+" test samples"
-  aux = np.load(features_root+content[0].split(' ')[0]+'.jpg')
+  aux = Image.open(features_root+content[0].split(' ')[0]+'.jpg')
+  aux = aux.resize((MODEL_INPUT_SIZE,MODEL_INPUT_SIZE))
+  aux = np.asarray(aux)
   X = np.zeros((len(content),(aux.flatten()).shape[0]), dtype=np.float32)
   y = np.zeros(len(content))
   idx = 0
   for sample in content:
     data = sample.split(' ')
     if data[1] == '': data[1] = '1'
-    X[idx,:] = np.load(features_root+data[0]+'.jpg').flatten()
+    image = Image.open(features_root+data[0]+'.jpg')
+    image.resize((MODEL_INPUT_SIZE,MODEL_INPUT_SIZE))
+    X[idx,:] = np.asarray(image).flatten()
     y[idx]   = max(0,int(data[1]))
     idx = idx+1
 
