@@ -45,18 +45,16 @@ os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"]="5"
 
 ### Start : Extract the representation from specified layer and save in generated_data direcroty ###
-if len(sys.argv)<2:
-  print colored('You must provide the layer from wich to extract features. e.g. fc7, fc6, pool5, ...', 'red')
-  quit()
 
-layer = sys.argv[1]
 
+# layer = sys.argv[1]
+layer = "fc7"
 # Specify paths to model prototxt and model weights
 PATH = "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model"
 # Initialize pytorch model instnce with given weights and model prototxt
 net = torch.load(PATH)
-new_classifier = nn.Sequential(*list(net.children())[:-1])
-model = new_classifier
+new_classifier = nn.Sequential(*list(net.classifier.children())[:-2])
+net.classifier = new_classifier
 IMG_SIZE = 256
 MODEL_INPUT_SIZE = 227
 MEAN = np.array([104.00698793, 116.66876762, 122.67891434])
@@ -72,7 +70,7 @@ onlyfiles = [f for f in os.listdir(img_root) if os.path.isfile(os.path.join(img_
 
 print colored('Starting image representation generation', 'green')
 # For given layer and each given input image, generate corresponding representation
-net = model
+
 for param in net.parameters():
     param.requires_grad = False
 net.eval()
@@ -102,7 +100,7 @@ print colored('Completed image representation generation.', 'green')
 ### End : Generating image representations for all images ###
 
 ### Start : Learn one vs all SVMs for each target class ###
-features_root = out_root
+features_root = '/mnt/lascar/qqiscen/src/TextTopicNet/data/VOC2007/VOCdevkit/VOC2007/JPEGImages/'
 svm_out_path = '/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/SVMs/VOC2007/generated_data/voc_2007_classification/'+ layer + '_SVM'
 if not os.path.exists(svm_out_path):
   os.makedirs(svm_out_path)
@@ -110,9 +108,9 @@ classes = ['aeroplane','bicycle','bird','boat','bottle','bus','car','cat','chair
 cs = [13,14,15,16,17,18] # List of margins for SVM
 
 # Specify ground truth paths for PASCAL VOC2007 dataset
-gt_root = '/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/SVMs/VOC2007/GT_labels/'
+gt_root = '/mnt/lascar/qqiscen/src/TextTopicNet/data/VOC2007/VOCdevkit/VOC2007/ImageSets/Main/'
 gt_train_sufix = '_train.txt'
-gt_val_sufix = '_val.tx
+gt_val_sufix = '_val.txt'
 gt_test_sufix = '_test.txt'
 
 mAP2 = 0
@@ -122,14 +120,22 @@ for cl in classes:
   print colored("Do grid search for class "+cl, 'green')
   with open(gt_root+cl+gt_train_sufix) as f:
     content = f.readlines()
-  aux = np.load(features_root+content[0].split(' ')[0]+'.jpg')
+  aux = Image.open(features_root+content[0].split(' ')[0]+'.jpg')
+  aux = aux.resize((MODEL_INPUT_SIZE,MODEL_INPUT_SIZE))
+  aux = np.asarray(aux)
   X = np.zeros((len(content),(aux.flatten()).shape[0]), dtype=np.float32)
   y = np.zeros(len(content))
   idx = 0
+  
   for sample in content:
     data = sample.split(' ')
-    if data[1] == '': data[1] = '1'
-    X[idx,:] = np.load(features_root+data[0]+'.jpg').flatten()
+    if data[1] == '': 
+      data[1] = '1'
+    image = Image.open(features_root+data[0]+'.jpg')
+    image = image.resize((MODEL_INPUT_SIZE,MODEL_INPUT_SIZE))
+    image = np.asarray(image).flatten()
+    # print("aux {}, image {}".format((aux.flatten()).shape[0], image.shape[0]))
+    X[idx,:] = image
     y[idx]   = max(0,int(data[1]))
     idx = idx+1
 
@@ -140,11 +146,14 @@ for cl in classes:
   idx = 0
   for sample in content:
     data = sample.split(' ')
-    if data[1] == '': data[1] = '1'
-    XX[idx,:] = np.load(features_root+data[0]+'.jpg').flatten()
+    if data[1] == '': 
+      data[1] = '1'
+    image = Image.open(features_root+data[0]+'.jpg')
+    image = image.resize((MODEL_INPUT_SIZE,MODEL_INPUT_SIZE))
+    XX[idx,:] = np.asarray(image).flatten()
     yy[idx]   = max(0,int(data[1]))
     idx = idx+1
-
+  print("done writing X, y, XX, yy")
   bestAP=0
   bestC=-1
 
@@ -154,6 +163,7 @@ for cl in classes:
   XX_scaled = scaler.transform(XX)
 
   for c in cs:
+    print "processing margin" + str(c) + " out of "+ str(cs)
     clf = svm.LinearSVC(C=pow(0.5,c))
     clf.fit(X_scaled, y)
     #yy_ = clf.predict(XX)
@@ -187,7 +197,7 @@ if not os.path.exists(res_root):
 mAP2=0
 
 for cl in classes:
-
+  
   with open(gt_root+cl+gt_test_sufix) as f:
     content = f.readlines()
   print "Testing one vs. rest SVC for class "+cl+" for "+str(len(content))+" test samples"
