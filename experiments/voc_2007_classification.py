@@ -42,18 +42,18 @@ def get_vector(target_layer, t_img):
     return my_embedding
   
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   
-os.environ["CUDA_VISIBLE_DEVICES"]="5"
+os.environ["CUDA_VISIBLE_DEVICES"]="6"
 
 ### Start : Extract the representation from specified layer and save in generated_data direcroty ###
 
 
 # layer = sys.argv[1]
-layer = "fc7"
+layer = "pool5"
 # Specify paths to model prototxt and model weights
-PATH = "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model6"
+PATH = "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model"
 # Initialize pytorch model instnce with given weights and model prototxt
 net = torch.load(PATH)
-new_classifier = nn.Sequential(*list(net.classifier.children())[:-2])
+new_classifier = nn.Sequential()
 net.classifier = new_classifier
 IMG_SIZE = 256
 MODEL_INPUT_SIZE = 227
@@ -75,8 +75,8 @@ for param in net.parameters():
     param.requires_grad = False
 net.eval()
 
-# !!!!
-for sample in onlyfiles[:10]:
+#!!!!
+for sample in onlyfiles:
   im_filename = img_root+sample
   
 
@@ -116,8 +116,8 @@ gt_val_sufix = '_val.txt'
 gt_test_sufix = '_test.txt'
 
 mAP2 = 0
-# !!!!!
-for cl in classes[:1]:
+#!!!!!
+for cl in classes:
 
   print colored("Do grid search for class "+cl, 'green')
   with open(gt_root+cl+gt_train_sufix) as f:
@@ -164,7 +164,7 @@ for cl in classes[:1]:
   X_scaled = scaler.transform(X)
   XX_scaled = scaler.transform(XX)
   #!!!!!
-  for c in cs[:1]:
+  for c in cs:
     print "processing margin " + str(c) + " out of "+ str(cs)
     clf = svm.LinearSVC(C=pow(0.5,c))
     clf.fit(X_scaled, y)
@@ -183,6 +183,7 @@ for cl in classes[:1]:
   print X.shape, XX.shape, X_all.shape
   y_all = np.concatenate((y, yy))
   clf = svm.LinearSVC(C=bestC)
+  print "fitting X and y"
   clf.fit(X_all, y_all)
   joblib.dump(clf, svm_out_path + '/clf_'+cl+'_'+layer+'.pkl')
   print "  ... model saved as "+svm_out_path+'/clf_'+cl+'_'+layer+'.pkl'
@@ -198,7 +199,7 @@ if not os.path.exists(res_root):
 
 mAP2=0
 #!!!!
-for cl in classes[:1]:
+for cl in classes:
   
   with open(gt_root+cl+gt_test_sufix) as f:
     content = f.readlines()
