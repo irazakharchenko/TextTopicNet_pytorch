@@ -23,7 +23,7 @@ import AlexNet_pool_norm
 from torchvision import transforms
 
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   
-os.environ["CUDA_VISIBLE_DEVICES"]="5"
+os.environ["CUDA_VISIBLE_DEVICES"]="6"
 
 
 #---------------------------------------------------------------------
@@ -73,12 +73,12 @@ print ('>> {}: Processing test dataset...'.format(test_dataset))
 # config file for the dataset   
 # separates query image list from database image list, if revisited protocol used
 layers = [["pool5",  0, 256 * 6 * 6], ["fc6", 2, 4096], ["fc7", -2, 4096]]
-our_layer = 1
+our_layer = 0
 
 cfg = configdataset(test_dataset, os.path.join(data_root, 'datasets'))
 
 
-PATH = "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model5"
+PATH = "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model"
 print ('Model weights are loaded from : ' + PATH)
 
 net = torch.load(PATH)
@@ -106,7 +106,7 @@ for i in np.arange(cfg['nq']):
 
     print('>> {}: Processing query image {}'.format(test_dataset, i+1))
 X = normalized(X,0)
-np.save(outfile_X, X)   
+ 
 # save X to file
 np.save("X_"+layers[our_layer][0] +".npy", X)
 
