@@ -6,35 +6,65 @@ __all__ = ['AlexnetPoolNorm', 'alexnet']
 
 
 
+class LRN(nn.Module):
+    def __init__(self, local_size=1, alpha=1.0, beta=0.75, ACROSS_CHANNELS=True):
+        super(LRN, self).__init__()
+        self.ACROSS_CHANNELS = ACROSS_CHANNELS
+        if ACROSS_CHANNELS:
+            self.average=nn.AvgPool3d(kernel_size=(local_size, 1, 1),
+                    stride=1,
+                    padding=(int((local_size-1.0)/2), 0, 0))
+        else:
+            self.average=nn.AvgPool2d(kernel_size=local_size,
+                    stride=1,
+                    padding=int((local_size-1.0)/2))
+        self.alpha = alpha
+        self.beta = beta
+
+
+    def forward(self, x):
+        if self.ACROSS_CHANNELS:
+            div = x.pow(2).unsqueeze(1)
+            div = self.average(div).squeeze(1)
+            div = div.mul(self.alpha).add(1.0).pow(self.beta)
+        else:
+            div = x.pow(2)
+            div = self.average(div)
+            div = div.mul(self.alpha).add(1.0).pow(self.beta)
+        
+        x = x.div(div)
+        return x
+
+
 class AlexnetPoolNorm(nn.Module):
 
     def __init__(self, num_classes=1000):
         super(AlexnetPoolNorm, self).__init__()
         self.features = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=11, stride=4, padding=2),  #1
-            nn.ReLU(inplace=True), 
-            # nn.LocalResponseNorm(5, alpha=1e-4, beta=0.75),
+            nn.Conv2d(3, 96, kernel_size=11, stride=4, padding=0),
+            nn.ReLU(inplace=True),
+            LRN(local_size=5, alpha=0.0001, beta=0.75),
             nn.MaxPool2d(kernel_size=3, stride=2),
-            nn.Conv2d(64, 192, kernel_size=5, padding=2),           #2
+            nn.Conv2d(96, 256, kernel_size=5, padding=2, groups=2),
             nn.ReLU(inplace=True),
-            # nn.LocalResponseNorm(5, alpha=1e-4, beta=0.75),
-            nn.MaxPool2d(kernel_size=3, stride =2),
-            nn.Conv2d(192, 384, kernel_size=3, padding=1),          #3
+            LRN(local_size=5, alpha=0.0001, beta=0.75),
+            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.Conv2d(256, 384, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
-            nn.Conv2d(384, 256, kernel_size=3, padding=1),          #4
+            nn.Conv2d(384, 384, kernel_size=3, padding=1, groups=2),
             nn.ReLU(inplace=True),
-            nn.Conv2d(256, 256, kernel_size=3, padding=1),          #5
+            nn.Conv2d(384, 256, kernel_size=3, padding=1, groups=2),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=3, stride=2),
         )
         self.classifier = nn.Sequential(
-            nn.Dropout(),
-            nn.Linear(256 * 6 * 6, 4096),                           #6
+            nn.Linear(256 * 6 * 6, 4096),
             nn.ReLU(inplace=True),
             nn.Dropout(),
-            nn.Linear(4096, 4096),                                  #7
+            nn.Linear(4096, 4096),
             nn.ReLU(inplace=True),
-            nn.Linear(4096, num_classes),                           #8
+            nn.Dropout(),
+            nn.Linear(4096, num_classes),
         )
 
     def forward(self, x):
@@ -52,5 +82,7 @@ def alexnet_pool_norm(pretrained=False, **kwargs):
     """
     model = AlexnetPoolNorm(**kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['alexnet']))
+        model_path = 'model_list/alexnet.pth.tar'
+        pretrained_model = torch.load(model_path)
+        model.load_state_dict(pretrained_model['state_dict'])
     return model
