@@ -146,7 +146,7 @@ def main():
         train_dataset, batch_size=args.batch_size, shuffle=(train_sampler is None),
         num_workers=args.workers, pin_memory=True, sampler=train_sampler)
 
-
+    l_losses = []
     for epoch in range(args.start_epoch, args.epochs):
        
         if args.distributed:
@@ -154,10 +154,18 @@ def main():
         adjust_learning_rate(optimizer, epoch)
 
         # train for one epoch
-        train(train_loader, model, criterion, optimizer, epoch)
-        torch.save(model, "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model")
         
-    torch.save(model, "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model")
+        cur_loss = train(train_loader, model, criterion, optimizer, epoch)
+
+        if epoch % 10 == 0:
+            torch.save(model, "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model" + str(epoch))
+            l_losses.append(cur_loss)
+            with open("losses.txt", "w") as f:
+                f.write(str(l_losses))
+        # torch.save(model, "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model")
+    with open("losses.txt", "w") as f:
+        f.write(str(l_losses))
+    torch.save(model, "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model_")
     torch.save(model.state_dict(),"/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model_dict")
     print("All done, training {} epochs".format(args.epochs))
 
@@ -179,15 +187,13 @@ def train(train_loader, model, criterion, optimizer, epoch):
         input, target = Variable(input), Variable(target)
         
         target = target.cuda()
-
+        # input = input.cuda()
         # compute output
         output = model(input)   
 	   
         loss = criterion(output, target)
         
-
         # measure record loss
-
         losses.update(loss.data[0], input.size(0))
         
         # compute gradient and do SGD step
@@ -208,6 +214,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
                    epoch, i, len(train_loader), batch_time=batch_time,
                    data_time=data_time, loss=losses))
             # print(target)
+    return losses.avg
             
 
 
