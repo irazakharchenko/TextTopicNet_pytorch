@@ -17,7 +17,7 @@ import scipy.stats as sp
 from preprocess_text import preprocess_imageclef
 
 import torch
-
+import torchvision.transforms as transforms, utils
 from torch.autograd import Variable
 sys.path.insert(0, '/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch')
 
@@ -25,10 +25,6 @@ import AlexNet_pool_norm
 
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   
 os.environ["CUDA_VISIBLE_DEVICES"]="6"
-
-num_topics = 40
-layer = 'prob'
-type_data_list = ['test']
 
 # Function to compute average precision for text retrieval given image as input
 def get_AP_img2txt(sorted_scores, given_image, top_k):
@@ -78,7 +74,7 @@ query_type=sys.argv[1]
 
 layer = 'prob' # Note : Since image and text has to be in same space for retieval. CNN layer has to be 'prob'
 num_topics = 40 # Number of topics for the corresponding LDA model
-
+type_data_list = ['test']
 
 # Specify path to model prototxt and model weights
 PATH = "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model"
@@ -87,6 +83,8 @@ print colored('Model weights are loaded from : ' + PATH	, 'green')
 
 # Initialize pytorch model instnce with given weights and model prototxt
 net = torch.load(PATH)
+net.cuda()
+
 for param in net.parameters():
 	param.requires_grad = False
 IMG_SIZE = 256
@@ -103,27 +101,27 @@ for type_data in type_data_list:
 	out_root = '/home.guest/zakhairy/code/our_TextTopicNet/generated_data/multi_modal_retrieval/image/' + str(layer) + '/' + str(num_topics) + '/' + str(type_data) + '/'
 	if not os.path.exists(out_root):	
 		os.makedirs(out_root)
+		
 	im_txt_pair_wd = open('/mnt/lascar/qqiscen/src/TextTopicNet/data/Wikipedia/'+str(type_data)+'set_txt_img_cat.list', 'r').readlines() # Image-text pairs
 	img_files = [i.split('\t')[1] + '.jpg' for i in im_txt_pair_wd] # List of image files in wikipedia dataset
 	for sample in img_files:
 			im_filename = img_root+sample
 			print colored('Generating image representation for : ' + im_filename, 'green')
-			im = Image.open(im_filename)
-			im = im.resize((IMG_SIZE,IMG_SIZE)) # resize to IMG_SIZExIMG_SIZE
-			im = im.crop((14,14,241,241)) # central crop of 227x227
-			if len(np.array(im).shape) < 3:
-					im = im.convert('RGB') # grayscale to RGB
-			in_ = np.array(im, dtype=np.float32)
-			in_ = in_[:,:,::-1] # switch channels RGB -> BGR
-			in_ -= MEAN # subtract mean
-			in_ = in_.transpose((2,0,1)) # transpose to channel x height x width order
-			t_img = Variable( torch.from_numpy(np.flip(in_[np.newaxis,:,:,:] ,axis=0).copy()))
+			im = Image.open(im_filename).convert('RGB') 	
+			transform = transforms.Compose([
+												transforms.Resize(IMG_SIZE),
+												transforms.CenterCrop(227),
+												transforms.ToTensor(),
+												transforms.Normalize(mean=MEAN, std=[1,1,1]),
+											])
+
+			t_img = Variable(transform(im))
+			t_img = t_img.unsqueeze_(0)
+			t_img = t_img.cuda()
 			output = net.forward(t_img) 
-			# output_prob = net.blobs[layer].data[0] # the output feature vector for the first image in the batch
-			# print(output)	
-			f = open(out_root+sample, "w+")
-			np.save(f, output)
-			f.close()
+			# output_prob = net.blobs[layer].data[0] # the output feature vector for the first image in the batch			
+			np.save(out_root+sample, output)
+			
 print 'Finished generating representation for wikipedia dataset images'
 ### End : Generating image representations of wikipedia dataset for performing multi modal retrieval
 
@@ -143,10 +141,10 @@ for choose_set in choose_set_list:
 	# Read image-text document pair ids
 	im_txt_pair_wd = open('../data/Wikipedia/'+str(choose_set)+'set_txt_img_cat.list', 'r').readlines()
 	text_files_wd = [text_dir_wd + i.split('\t')[0] + '.xml' for i in im_txt_pair_wd]
-	output_path_root = './generated_data/multi_modal_retrieval/text/'
+	output_path_root = '../generated_data/multi_modal_retrieval/text/'
 	if not os.path.exists(output_path_root):
 		os.makedirs(output_path_root)
-	output_file_path = 'wd_txt_' + str(num_topics) + '_' + str(type_data) + '.json'
+	output_file_path = 'wd_txt_' + str(num_topics) + '_' + str(type_data) + '.txt'
 	
 	# transform ALL documents into LDA space
 	output_path = output_path_root + output_file_path
@@ -155,13 +153,11 @@ for choose_set in choose_set_list:
         	print colored('Generating text representation for document number : ' + str(len(TARGET_LABELS.keys())), 'green')
         	raw = open(i,'r').read()
         	process = preprocess_imageclef(raw)
-        	# print "len raw / len process[0]  " + str(len(raw)) +" / " + str(len(process[0]))
         	if process[1] != '':
                 	tokens = process[0]
-                	# print tokens
+
                 	bow_vector = dictionary.doc2bow(tokens)
-                	# print "len bow_ve	ctor "+ str(len(bow_vector))
-                	
+
                 	while bow_vector[-1][0] > 100000:
                 	    bow_vector = bow_vector[:int(-0.05*len(bow_vector))]
                 	lda_vector = ldamodel.get_document_topics(bow_vector[:], minimum_probability=None)
@@ -178,8 +174,8 @@ for choose_set in choose_set_list:
                                 	labels.append(0)
                 	list_name =  i.split('/')
                 	TARGET_LABELS[list_name[len(list_name) -1 ].split('.xml')[0]] = labels
-	print TARGET_LABELS
-	# Save thi as json.
+	
+	# Save this as txt.
 	with open(output_path,'w') as fp:
 		for key in TARGET_LABELS.keys():
 			s = key + "\t"
@@ -198,7 +194,7 @@ for type_data in type_data_list:
 	# Wikipedia data paths
 	im_txt_pair_wd = open('../data/Wikipedia/'+str(type_data)+'set_txt_img_cat.list', 'r').readlines()
 	image_files_wd = [i.split('\t')[1] + '.jpg' for i in im_txt_pair_wd]
-	print "len im_txt_pair_wd "+ str(len(im_txt_pair_wd))
+	
 	# Read the required Grount Truth for the task.
 	GT_img2txt = {} # While retrieving text, you need image as key.
 	GT_txt2img = {} # While retrieving image, you need text as key.
@@ -207,12 +203,12 @@ for type_data in type_data_list:
         	GT_txt2img[i.split('\t')[0]] = (i.split('\t')[1], i.split('\t')[2]) # (Corresponding image, class)
 
 	# Load image representation
-	image_rep = './generated_data/multi_modal_retrieval/image/' + str(layer) + '/' + str(num_topics) + '/' + str(type_data) + '/'
+	image_rep = '../generated_data/multi_modal_retrieval/image/' + str(layer) + '/' + str(num_topics) + '/' + str(type_data) + '/'
 
 	# Load text representation
 	# data_text = json.load(open('./generated_data/multi_modal_retrieval/text/wd_txt_' + str(num_topics) + '_' + str(type_data) + '.json','r'))
 	data_text = {}
-	with open('./generated_data/multi_modal_retrieval/text/wd_txt_' + str(num_topics) + '_' + str(type_data) + '.txt', "r") as inp:
+	with open('../generated_data/multi_modal_retrieval/text/wd_txt_' + str(num_topics) + '_' + str(type_data) + '.txt', "r") as inp:
         	li = inp.readline()
         	while li :
         		key, val = li.split("\t")
@@ -225,7 +221,7 @@ for type_data in type_data_list:
 	image_ttp = {}
 	for i in GT_img2txt.keys():
         	sample = i
-        	value = np.load(image_rep + i + '.jpg')
+        	value = np.load(image_rep + i + '.jpg.npy')
         	image_ttp[sample] = value
 
 	# Convert text_rep to numpy format
@@ -239,19 +235,20 @@ for type_data in type_data_list:
 	        counter = 0
         	order_of_images = sorted(image_ttp.keys())
         	order_of_texts = sorted(text_ttp.keys())
-        	print order_of_images
+        	
         	for given_image in order_of_images:
                 	print colored('Performing retrieval for document number : ' + str(counter), 'green')
                 	score_texts = []
-                	image_reps = image_ttp[given_image]
+                	image_reps = image_ttp[given_image][0]
                 	for given_text in order_of_texts:
                         	text_reps = text_ttp[given_text]
+                        	
                         	given_score = sp.entropy(text_reps, image_reps)
                         	score_texts.append((given_text, given_score))
                 	sorted_scores = sorted(score_texts, key=lambda x:x[1],reverse=False)
                 	mAP = mAP + get_AP_img2txt(sorted_scores, given_image, top_k=len(order_of_texts))
                 	counter += 1
-        	print image_ttp
+   	     	
         	print colored('MAP img2txt : ' + str(float(mAP/len(image_ttp.keys()))), 'red')
 	if query_type == 'txt2img' :
         	counter = 0
@@ -262,7 +259,7 @@ for type_data in type_data_list:
                 	score_images = []
                 	text_reps = text_ttp[given_text]
                 	for given_image in order_of_images:
-                        	image_reps = image_ttp[given_image]
+                        	image_reps = image_ttp[given_image][0]
                         	given_score = sp.entropy(text_reps, image_reps)
                         	score_images.append((given_image, given_score))
                 	sorted_scores = sorted(score_images, key=lambda x:x[1],reverse=False)
