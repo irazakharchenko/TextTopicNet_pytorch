@@ -77,7 +77,7 @@ num_topics = 40 # Number of topics for the corresponding LDA model
 type_data_list = ['test']
 
 # Specify path to model prototxt and model weights
-PATH = "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model"
+PATH = "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model60"
 print colored('Model weights are loaded from : ' + PATH	, 'green')
 
 

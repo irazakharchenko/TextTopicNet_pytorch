@@ -17,29 +17,13 @@ import torch.nn.parallel
 import torch.backends.cudnn as cudnn
 import torch.distributed as dist
 import torch.optim
-
+import torchvision.transforms as transforms, utils
 from torch.autograd import Variable
 sys.path.insert(0, '/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch')
 
 import AlexNet_pool_norm
 
 
-def get_vector(target_layer, t_img):
-    
-    # 3. Create a vector of zeros that will hold our feature vector
-    #    The 'avgpool' layer has an output size of 512
-    my_embedding = torch.zeros(512)
-    # 4. Define a function that will copy the output of a layer
-    def copy_data(m, i, o):
-        my_embedding.copy_(o.data)
-    # 5. Attach that function to our selected layer
-    h = target_layer.register_forward_hook(copy_data)
-    # 6. Run the model on our transformed image
-    model(t_img)
-    # 7. Detach our copy function from the layer
-    h.remove()
-    # 8. Return the feature vector
-    return my_embedding
   
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   
 os.environ["CUDA_VISIBLE_DEVICES"]="6"
@@ -55,6 +39,7 @@ PATH = "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model"
 net = torch.load(PATH)
 new_classifier = nn.Sequential()
 net.classifier = new_classifier
+net.cuda()
 IMG_SIZE = 256
 MODEL_INPUT_SIZE = 227
 MEAN = np.array([104.00698793, 116.66876762, 122.67891434])
@@ -73,27 +58,26 @@ print colored('Starting image representation generation', 'green')
 
 for param in net.parameters():
     param.requires_grad = False
+
 net.eval()
 
 #!!!!
 for sample in onlyfiles:
   im_filename = img_root+sample
   
+  im = Image.open(im_filename).convert('RGB') 	
+  transform = transforms.Compose([
+                    transforms.Resize(IMG_SIZE),
+                    transforms.CenterCrop(227),
+                    transforms.ToTensor(),
+                    transforms.Normalize(mean=MEAN, std=[1,1,1]),
+                  ])
 
-  im = Image.open(im_filename)
-  im = im.resize((IMG_SIZE,IMG_SIZE)) # resize to IMG_SIZExIMG_SIZE
-  im = im.crop((14,14,241,241)) # central crop of 227x227
-  if len(np.array(im).shape) < 3:
-    im = im.convert('RGB') # grayscale to RGB
-  in_ = np.array(im, dtype=np.float32)
-  in_ = in_[:,:,::-1] # switch channels RGB -> BGR
-  in_ -= MEAN # subtract mean
-  in_ = in_.transpose((2,0,1)) # transpose to channel x height x width order
-  t_img = Variable( torch.from_numpy(np.flip(in_[np.newaxis,:,:,:] ,axis=0).copy()))
-  
+  t_img = Variable(transform(im))
+  t_img = t_img.unsqueeze_(0)
+  t_img = t_img.cuda()
   output = net.forward(t_img) 
-  # output_prob = get_vector(target_layer,t_img) # the output feature vector for the first image in the batch
-  # print out_root+sample
+
   f = open(out_root+sample, 'w+')
   np.save(f, output)
   f.close()
@@ -214,7 +198,7 @@ for cl in classes:
     data = sample.split(' ')
     if data[1] == '': data[1] = '1'
     image = Image.open(features_root+data[0]+'.jpg')
-    image.resize((MODEL_INPUT_SIZE,MODEL_INPUT_SIZE))
+    image = image.resize((MODEL_INPUT_SIZE,MODEL_INPUT_SIZE))
     X[idx,:] = np.asarray(image).flatten()
     y[idx]   = max(0,int(data[1]))
     idx = idx+1
