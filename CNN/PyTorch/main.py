@@ -160,6 +160,7 @@ def main():
         if epoch % 10 == 0:
             torch.save(model, "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model" + str(epoch))
             l_losses.append(cur_loss)
+           
             with open("losses.txt", "w") as f:
                 f.write(str(l_losses))
         # torch.save(model, "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model")
@@ -214,7 +215,8 @@ def train(train_loader, model, criterion, optimizer, epoch):
                    epoch, i, len(train_loader), batch_time=batch_time,
                    data_time=data_time, loss=losses))
             # print(target)
-    return losses.avg
+        
+    return losses.avg[0]
             
 
 
