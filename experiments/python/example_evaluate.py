@@ -45,14 +45,14 @@ print('>> {}: Loading features...'.format(test_dataset))
 # X = features['X']
 # np.load(outfile_X)
 # np.load(outfile_Q)
-Q = np.load("Q_pool5.npy")
-X = np.load("X_pool5.npy")
+Q = np.load("Q_fc7.npy")
+X = np.load("X_fc7.npy")
 # perform search
 print('>> {}: Retrieval...'.format(test_dataset))
 sim = np.dot(X.T, Q)
 ranks = np.argsort(-sim, axis=0)
     
-# revisited evaluation
+# revisited evaluation  
 gnd = cfg['gnd']
 
 # evaluate ranks

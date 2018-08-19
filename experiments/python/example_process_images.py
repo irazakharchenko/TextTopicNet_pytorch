@@ -1,4 +1,4 @@
-    # EXAMPLE_PROCESS_IMAGES  Code to read and process images for ROxford and RParis datasets.
+# EXAMPLE_PROCESS_IMAGES  Code to read and process images for ROxford and RParis datasets.
 # Revisited protocol requires query images to be removed from the database, and cropped prior to any processing.
 # This code makes sure the protocol is strictly followed.
 #
@@ -35,7 +35,7 @@ data_root = os.path.join("../../data/roxford")
 download_datasets(data_root)
 
 # Set test dataset: roxford5k | rparis6k
-test_dataset = 'roxford5k'
+test_dataset = 'rparis6k'
 IMG_SIZE = 256
 MEAN = np.array([0,0,0])
 #---------------------------------------------------------------------
@@ -108,7 +108,7 @@ for i in np.arange(cfg['nq']):
 X = normalized(X,0)
  
 # save X to file
-np.save("X_"+layers[our_layer][0] +".npy", X)
+np.save("X_"+layers[our_layer][0] + test_dataset +".npy", X)
 
 # 5000
 Q = np.empty(( layers[our_layer][2], cfg['n']))
@@ -123,4 +123,4 @@ for i in np.arange(cfg['n']):
     print('>> {}: Processing database image {}'.format(test_dataset, i+1))
 Q = normalized(Q,0)
 # save Q to file
-np.save("Q_"+layers[our_layer][0] +".npy", Q)
+np.save("Q_"+layers[our_layer][0] + test_dataset +".npy", Q)
