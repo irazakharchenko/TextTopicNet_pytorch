@@ -163,7 +163,7 @@ for cl in classes:
   scaler = preprocessing.StandardScaler().fit(X_all)
   X_all = scaler.transform(X_all)
   joblib.dump(scaler, './generated_data/voc_2007_classification/features_'+layer+'/scaler.pkl')
-  print X.shape, XX.shape, X_all.shape
+  # print X.shape, XX.shape, X_all.shape
   y_all = np.concatenate((y, yy))
   clf = svm.LinearSVC(C=bestC)
   print "fitting X and y"
