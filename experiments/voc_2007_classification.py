@@ -23,10 +23,9 @@ sys.path.insert(0, '/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch')
 
 import AlexNet_pool_norm
 
-
   
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   
-os.environ["CUDA_VISIBLE_DEVICES"]="6"
+os.environ["CUDA_VISIBLE_DEVICES"]="2"
 
 ### Start : Extract the representation from specified layer and save in generated_data direcroty ###
 
@@ -34,7 +33,7 @@ os.environ["CUDA_VISIBLE_DEVICES"]="6"
 # layer = sys.argv[1]
 layer = "pool5"
 # Specify paths to model prototxt and model weights
-PATH = "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model"
+PATH = "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model60"
 # Initialize pytorch model instnce with given weights and model prototxt
 net = torch.load(PATH)
 new_classifier = nn.Sequential()
@@ -212,6 +211,8 @@ for cl in classes:
   y_ = clf.decision_function(X)
   AP = average_precision_score(y, y_)
   print "  ... Test AP: "+str(AP)
+  with open(res_root+'RES_cls_test_'+cl+'_AP.txt','w') as f:
+      f.write(str(AP))
   mAP2 = mAP2+AP
 
   fr = open(res_root+'RES_cls_test_'+cl+'.txt','w+')
@@ -221,6 +222,7 @@ for cl in classes:
     fr.write(str(data[0])+' '+str(y_[idx])+'\n')
     idx = idx+1
   fr.close()
-
+with open(res_root+'RES_cls_test_all_AP.txt','w') as f:
+  f.write(str(mAP2/float(len(classes))))
 print colored("\nTest mAP: "+str(mAP2/float(len(classes)))+" (this is an underestimate, you must run VOC_eval.m for mAP taking into account don't care objects)", 'green')
 ### End : Testing of learned SVMs ###
