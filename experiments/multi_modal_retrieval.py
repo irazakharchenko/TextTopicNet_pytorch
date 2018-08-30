@@ -24,7 +24,7 @@ sys.path.insert(0, '/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch')
 import AlexNet_pool_norm
 
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   
-os.environ["CUDA_VISIBLE_DEVICES"]="6"
+os.environ["CUDA_VISIBLE_DEVICES"]="2"
 
 # Function to compute average precision for text retrieval given image as input
 def get_AP_img2txt(sorted_scores, given_image, top_k):
@@ -46,7 +46,7 @@ def get_AP_img2txt(sorted_scores, given_image, top_k):
                 return float(sum_term/T)
 
 # Function to compute average precision for image retrieval given text as input
-def get_AP_txt2img(sorted_scores, given_text, top_k):
+def get_AP_txt2img(sorted_scores, given_text, top_	k):
         consider_top = sorted_scores[:top_k]
         top_image_classes = [GT_img2txt[i[0]][1] for i in consider_top]
         class_of_text = GT_txt2img[given_text][1]
@@ -77,7 +77,7 @@ num_topics = 40 # Number of topics for the corresponding LDA model
 type_data_list = ['test']
 
 # Specify path to model prototxt and model weights
-PATH = "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model60"
+PATH = "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model10"
 print colored('Model weights are loaded from : ' + PATH	, 'green')
 
 
