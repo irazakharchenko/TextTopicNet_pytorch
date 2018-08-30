@@ -101,7 +101,7 @@ def main():
         model = torch.nn.parallel.DistributedDataParallel(model)
 
     # define loss function (criterion) and optimizer
-    criterion = nn.MultiLabelSoftMarginLoss().cuda()
+    criterion = nn.BCEWithLogitsLoss().cuda()
     
     optimizer = torch.optim.SGD(model.parameters(), args.lr,
                                 momentum=args.momentum,
