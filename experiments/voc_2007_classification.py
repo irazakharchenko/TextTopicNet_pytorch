@@ -33,7 +33,7 @@ os.environ["CUDA_VISIBLE_DEVICES"]="2"
 # layer = sys.argv[1]
 layer = "pool5"
 # Specify paths to model prototxt and model weights
-PATH = "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model60"
+PATH = "/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/model10"
 # Initialize pytorch model instnce with given weights and model prototxt
 net = torch.load(PATH)
 new_classifier = nn.Sequential()
@@ -42,10 +42,10 @@ net.cuda()
 IMG_SIZE = 256
 MODEL_INPUT_SIZE = 227
 MEAN = np.array([104.00698793, 116.66876762, 122.67891434])
-
+ind = "m10"
 # Specify path to directory containing PASCAL VOC2007 images
 img_root = '/mnt/lascar/qqiscen/src/TextTopicNet/data/VOC2007/VOCdevkit/VOC2007/JPEGImages/'
-out_root = '/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/SVMs/VOC2007/generated_data/voc_2007_classification/features_'+layer+'/'
+out_root = '/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/SVMs/VOC2007/generated_data/voc_2007_classification/features_'+layer+'/'+ind+"/"
 if not os.path.exists(out_root):
   os.makedirs(out_root)
 
@@ -53,14 +53,13 @@ if not os.path.exists(out_root):
 onlyfiles = [f for f in os.listdir(img_root) if os.path.isfile(os.path.join(img_root, f))]
 
 print colored('Starting image representation generation', 'green')
-# For given layer and each given input image, generate corresponding representation
+
 
 for param in net.parameters():
     param.requires_grad = False
 
 net.eval()
-
-#!!!!
+# For given layer and each given input image, generate corresponding representation
 for sample in onlyfiles:
   im_filename = img_root+sample
   
@@ -85,13 +84,13 @@ print colored('Completed image representation generation.', 'green')
 ### End : Generating image representations for all images ###
 
 ### Start : Learn one vs all SVMs for each target class ###
-features_root = '/mnt/lascar/qqiscen/src/TextTopicNet/data/VOC2007/VOCdevkit/VOC2007/JPEGImages/'
+features_root = out_root
 svm_out_path = '/home.guest/zakhairy/code/our_TextTopicNet/CNN/PyTorch/SVMs/VOC2007/generated_data/voc_2007_classification/'+ layer + '_SVM'
 if not os.path.exists(svm_out_path):
   os.makedirs(svm_out_path)
 classes = ['aeroplane','bicycle','bird','boat','bottle','bus','car','cat','chair','cow','diningtable','dog','horse','motorbike','person','pottedplant','sheep','sofa','train','tvmonitor'] # List of classes in PASCAL VOC2007
 cs = [13,14,15,16,17,18] # List of margins for SVM
-
+best_cs = [0]*len(cs)
 # Specify ground truth paths for PASCAL VOC2007 dataset
 gt_root = '/mnt/lascar/qqiscen/src/TextTopicNet/data/VOC2007/VOCdevkit/VOC2007/ImageSets/Main/'
 gt_train_sufix = '_train.txt'
@@ -105,8 +104,8 @@ for cl in classes:
   print colored("Do grid search for class "+cl, 'green')
   with open(gt_root+cl+gt_train_sufix) as f:
     content = f.readlines()
-  aux = Image.open(features_root+content[0].split(' ')[0]+'.jpg')
-  aux = aux.resize((MODEL_INPUT_SIZE,MODEL_INPUT_SIZE))
+  aux = np.load(features_root+content[0].split(' ')[0]+'.jpg')
+  # aux = aux.resize((MODEL_INPUT_SIZE,MODEL_INPUT_SIZE))
   aux = np.asarray(aux)
   X = np.zeros((len(content),(aux.flatten()).shape[0]), dtype=np.float32)
   y = np.zeros(len(content))
@@ -116,11 +115,8 @@ for cl in classes:
     data = sample.split(' ')
     if data[1] == '': 
       data[1] = '1'
-    image = Image.open(features_root+data[0]+'.jpg')
-    image = image.resize((MODEL_INPUT_SIZE,MODEL_INPUT_SIZE))
-    image = np.asarray(image).flatten()
-    # print("aux {}, image {}".format((aux.flatten()).shape[0], image.shape[0]))
-    X[idx,:] = image
+
+    X[idx,:] = np.load(features_root+data[0]+'.jpg').flatten()
     y[idx]   = max(0,int(data[1]))
     idx = idx+1
 
@@ -133,22 +129,24 @@ for cl in classes:
     data = sample.split(' ')
     if data[1] == '': 
       data[1] = '1'
-    image = Image.open(features_root+data[0]+'.jpg')
-    image = image.resize((MODEL_INPUT_SIZE,MODEL_INPUT_SIZE))
-    XX[idx,:] = np.asarray(image).flatten()
+
+    XX[idx,:] = np.load(features_root+data[0]+'.jpg').flatten()
     yy[idx]   = max(0,int(data[1]))
     idx = idx+1
-  print("done writing X, y, XX, yy")
+
   bestAP=0
   bestC=-1
 
   scaler = preprocessing.StandardScaler().fit(X)
-  joblib.dump(scaler, './generated_data/voc_2007_classification/features_'+layer+'/scaler.pkl')
+  temp_path_scaler = './generated_data/voc_2007_classification/features_'+layer+'/'+ind+'/'
+  if not os.path.exists(temp_path_scaler):
+    os.makedirs(temp_path_scaler)
+  joblib.dump(scaler, temp_path_scaler+'scaler.pkl')
   X_scaled = scaler.transform(X)
   XX_scaled = scaler.transform(XX)
-  #!!!!!
+  print "start trying different margins"
+  best_c = 0
   for c in cs:
-    print "processing margin " + str(c) + " out of "+ str(cs)
     clf = svm.LinearSVC(C=pow(0.5,c))
     clf.fit(X_scaled, y)
     #yy_ = clf.predict(XX)
@@ -157,62 +155,62 @@ for cl in classes:
     if AP > bestAP:
       bestAP = AP
       bestC=pow(0.5,c)
+      best_c = c
+  best_cs[cs.index(best_c)] += 1
   print " Best validation AP :"+str(bestAP)+" found for C="+str(bestC)
   mAP2=mAP2+bestAP
   X_all = np.concatenate((X, XX), axis=0)
   scaler = preprocessing.StandardScaler().fit(X_all)
   X_all = scaler.transform(X_all)
-  joblib.dump(scaler, './generated_data/voc_2007_classification/features_'+layer+'/scaler.pkl')
-  # print X.shape, XX.shape, X_all.shape
+  
+  joblib.dump(scaler, './generated_data/voc_2007_classification/features_'+layer+'/'+ind+'/scaler.pkl')
+
   y_all = np.concatenate((y, yy))
   clf = svm.LinearSVC(C=bestC)
-  print "fitting X and y"
+
   clf.fit(X_all, y_all)
-  joblib.dump(clf, svm_out_path + '/clf_'+cl+'_'+layer+'.pkl')
-  print "  ... model saved as "+svm_out_path+'/clf_'+cl+'_'+layer+'.pkl'
+  joblib.dump(clf, svm_out_path + '/'+ind+'/clf_'+cl+'_'+layer+'.pkl')
+  print "  ... model saved as "+svm_out_path+'/'+ind+'/clf_'+cl+'_'+layer+'.pkl'
 
 print "\nValidation mAP: "+str(mAP2/float(len(classes)))+" (this is an underestimate, you must run VOC_eval.m for mAP taking into account don't care objects)"
 
 ### End : Learn one vs all SVMs for PASCAL VOC 2007 ###
 
 ### Start : Testing of learned SVMs ###
-res_root = './generated_data/voc_2007_classification/'+layer+'_SVM/RES_labels/'
+res_root = './generated_data/voc_2007_classification/'+layer+'_SVM/RES_labels/'+ind+'/'
 if not os.path.exists(res_root):
   os.makedirs(res_root)
-
+print("Testing for ind = " + str(ind))
 mAP2=0
-#!!!!
+results2file = []
 for cl in classes:
   
   with open(gt_root+cl+gt_test_sufix) as f:
     content = f.readlines()
   print "Testing one vs. rest SVC for class "+cl+" for "+str(len(content))+" test samples"
-  aux = Image.open(features_root+content[0].split(' ')[0]+'.jpg')
-  aux = aux.resize((MODEL_INPUT_SIZE,MODEL_INPUT_SIZE))
-  aux = np.asarray(aux)
+  aux = np.load(features_root+content[0].split(' ')[0]+'.jpg')
+  
   X = np.zeros((len(content),(aux.flatten()).shape[0]), dtype=np.float32)
   y = np.zeros(len(content))
   idx = 0
   for sample in content:
     data = sample.split(' ')
     if data[1] == '': data[1] = '1'
-    image = Image.open(features_root+data[0]+'.jpg')
-    image = image.resize((MODEL_INPUT_SIZE,MODEL_INPUT_SIZE))
-    X[idx,:] = np.asarray(image).flatten()
+    
+    X[idx,:] = np.load(features_root+data[0]+'.jpg').flatten()
     y[idx]   = max(0,int(data[1]))
     idx = idx+1
 
   print "  ... loading model from "+svm_out_path+'clf_'+cl+'_'+layer+'.pkl'
-  clf = joblib.load(svm_out_path+'/clf_'+cl+'_'+layer+'.pkl')
-  scaler = joblib.load('./generated_data/voc_2007_classification/features_'+layer+'/scaler.pkl')
+  clf = joblib.load(svm_out_path+'/'+ind+'/clf_'+cl+'_'+layer+'.pkl')
+  scaler = joblib.load('./generated_data/voc_2007_classification/features_'+layer+'/'+ind+'/scaler.pkl')
   X = scaler.transform(X)
 
 #  y_ = clf.predict(X)
   y_ = clf.decision_function(X)
   AP = average_precision_score(y, y_)
   print "  ... Test AP: "+str(AP)
-  with open(res_root+'RES_cls_test_'+cl+'_AP.txt','w') as f:
-      f.write(str(AP))
+  results2file.append((cl, AP))
   mAP2 = mAP2+AP
 
   fr = open(res_root+'RES_cls_test_'+cl+'.txt','w+')
@@ -222,7 +220,13 @@ for cl in classes:
     fr.write(str(data[0])+' '+str(y_[idx])+'\n')
     idx = idx+1
   fr.close()
+
 with open(res_root+'RES_cls_test_all_AP.txt','w') as f:
+  for el in results2file:
+    f.write(str(el)+"\n")
   f.write(str(mAP2/float(len(classes))))
-print colored("\nTest mAP: "+str(mAP2/float(len(classes)))+" (this is an underestimate, you must run VOC_eval.m for mAP taking into account don't care objects)", 'green')
+
+print("count best margin \n"+str(cs) +"\n"+ str(best_cs))
+
+print colored("\nTest mAP: "+str(mAP2/float(len(classes)))+" (this is an underestimate, you must run VOC_eval.m for mAP taking into account don't care objects) \n ind is "+ str(ind), 'green')
 ### End : Testing of learned SVMs ###
